@@ -1,0 +1,99 @@
+/*=========================================================================
+
+  Module:    vtkImageDataReader.h
+  Program:   Birch (CLSA Medical Image Quality Assessment Tool)
+  Language:  C++
+  Author:    Patrick Emond <emondpd@mcmaster.ca>
+  Author:    Dean Inglis <inglisd@mcmaster.ca>
+
+=========================================================================*/
+
+/**
+ * @class vtkImageDataReader
+ *
+ * @author Patrick Emond <emondpd@mcmaster.ca>
+ * @author Dean Inglis <inglisd@mcmaster.ca>
+ *
+ * @brief Read an image.
+ *
+ * In order to simplify the process of opening ImageData from disk this
+ * class wraps all image reader classes that extend vtkImageReader2, such
+ * as vtkJPEGReader, vtkPNGReader vtkXMLImageDataReader, etc.  The type of
+ * reader used is determined by file extension.  This class also supports
+ * VTK's XML image format using vtkXMLImageDataReader which it identifies
+ * by the extension .vti
+ *
+ * GDCM's reader is used instead of VTK's native DICOM reader.
+ */
+#ifndef __vtkImageDataReader_h
+#define __vtkImageDataReader_h
+
+#include <vtkObject.h>
+#include <vtkTimeStamp.h>
+
+class vtkAlgorithm;
+class vtkImageData;
+
+class vtkImageDataReader : public vtkObject 
+{
+public:
+  static vtkImageDataReader* New();
+  vtkTypeMacro( vtkImageDataReader, vtkObject );
+  void PrintSelf( ostream& os, vtkIndent indent );
+
+  //@{
+  /**
+   * Set/Get the file name to be opened by the reader.
+   * If a directory is selected then the reader will attempt to open all
+   * DICOM files in that directory.
+   */
+  virtual void SetFileName( const char* );
+  std::string GetFileName(){ return this->FileName; }
+  //@}
+
+  /**
+   * Returns a reference to a vtkImageData object created by opening the
+   * current FileName.  If FileName is changed then the next time this
+   * method is called the old reference will no longer be valid.
+   */
+  virtual vtkImageData* GetOutput();
+
+  /**
+   * Creates a new instance of a vtkImageData object created by opening
+   * the current FileName and returns it.  A reference to this object is
+   * not kept and it is up to the caller of this method to delete the
+   * object.
+   */
+  vtkImageData* GetOutputAsNewInstance();
+
+  /**
+   * Get the reader so we can query what type it was among other things.
+   */
+  vtkGetObjectMacro(Reader, vtkAlgorithm);
+
+  /**
+   * Before trying to do anything with the named file, check if it is in fact
+   * readable by this object.
+   */
+  static bool IsValidFileName( const char* );
+
+protected:
+  vtkImageDataReader();
+  ~vtkImageDataReader();
+  
+  /**
+   * Sets the the reader (keeping a reference to it and deleting the
+   * old one).
+   */
+  virtual void SetReader( vtkAlgorithm* );
+
+  std::string FileName;
+  vtkAlgorithm* Reader;
+  vtkTimeStamp ReadMTime;
+  
+private:
+  vtkImageDataReader( const vtkImageDataReader& );  /** Not implemented. */
+  void operator=( const vtkImageDataReader& );  /** Not implemented. */
+};
+
+#endif

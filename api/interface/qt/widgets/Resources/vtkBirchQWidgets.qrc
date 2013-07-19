@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Icons/frameBack.png</file>
+        <file>Icons/frameForward.png</file>
+        <file>Icons/pause.png</file>
+        <file>Icons/repeat.png</file>
+        <file>Icons/framePlay.png</file>
+        <file>Icons/framePlayReverse.png</file>
+        <file>Icons/frameToFirst.png</file>
+        <file>Icons/frameToLast.png</file>
+    </qresource>
+</RCC>
