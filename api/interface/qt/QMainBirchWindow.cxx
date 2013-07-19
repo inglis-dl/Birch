@@ -4,8 +4,8 @@
   Module:   QMainBirchWindow.cxx
   Language: C++
 
-  Author: Patrick Emond <emondpd@mcmaster.ca>
-  Author: Dean Inglis <inglisd@mcmaster.ca>
+  Author: Patrick Emond <emondpd AT mcmaster DOT ca>
+  Author: Dean Inglis <inglisd AT mcmaster DOT ca>
 
 =========================================================================*/
 #include "QMainBirchWindow.h"

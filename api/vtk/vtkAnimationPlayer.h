@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Module:    vtkAnimationPlayer.h
-  Program:   Birch (CLSA Medical Image Quality Assessment Tool)
+  Program:   Birch (A simple image viewer)
   Language:  C++
   Copyright (c) Kitware, Inc.
   All rights reserved.
@@ -16,8 +16,8 @@
 /**
  * @class vtkAnimationPlayer
 
- * @author Patrick Emond <emondpd@mcmaster.ca>
- * @author Dean Inglis <inglisd@mcmaster.ca>
+ * @author Patrick Emond <emondpd AT mcmaster DOT ca>
+ * @author Dean Inglis <inglisd AT mcmaster DOT ca>
  *
  * @brief Abstract superclass for an animation player.
  *

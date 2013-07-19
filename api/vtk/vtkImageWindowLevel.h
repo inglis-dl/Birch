@@ -1,17 +1,17 @@
 /*=========================================================================
 
   Module:    vtkImageWindowLevel.h
-  Program:   Birch (CLSA Medical Image Quality Assessment Tool)
+  Program:   Birch (A simple image viewer)
   Language:  C++
-  Author:    Patrick Emond <emondpd@mcmaster.ca>
-  Author:    Dean Inglis <inglisd@mcmaster.ca>
+  Author:    Patrick Emond <emondpd AT mcmaster DOT ca>
+  Author:    Dean Inglis <inglisd AT mcmaster DOT ca>
 
 =========================================================================*/
 
 /**
  * @class vtkImageWindowLevel
- * @author Patrick Emond <emondpd@mcmaster.ca>
- * @author Dean Inglis <inglisd@mcmaster.ca>
+ * @author Patrick Emond <emondpd AT mcmaster DOT ca>
+ * @author Dean Inglis <inglisd AT mcmaster DOT ca>
  *
  * @brief Map the input image through a lookup table and window / level it
  * 

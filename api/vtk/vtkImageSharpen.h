@@ -16,7 +16,7 @@
 /**
  * @class vtkImageSharpen
  *
- * @author Dean Inglis <inglisd@mcmaster.ca>
+ * @author Dean Inglis <inglisd AT mcmaster DOT ca>
  *
  * @brief Sharpen a 2D image.
  *
