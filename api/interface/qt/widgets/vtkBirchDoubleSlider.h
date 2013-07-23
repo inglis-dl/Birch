@@ -63,7 +63,7 @@ public:
   explicit vtkBirchDoubleSlider(QWidget* parent = 0);
   /// Constructors, builds a slider whose default values are the same as
   /// QSlider (vertical by default).
-  explicit vtkBirchDoubleSlider(Qt::Orientation orient, QWidget* parent = 0);
+  explicit vtkBirchDoubleSlider(Qt::Orientation orient = Qt::Horizontal, QWidget* parent = 0);
   /// Destructor
   virtual ~vtkBirchDoubleSlider();
 
