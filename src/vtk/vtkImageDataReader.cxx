@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Module:    vtkImageDataReader.cxx
-  Program:   Birch (A simple image viewer)
+  Program:   Birch (A Simple Image Viewer)
   Language:  C++
   Author:    Patrick Emond <emondpd AT mcmaster DOT ca>
   Author:    Dean Inglis <inglisd AT mcmaster DOT ca>
@@ -16,6 +16,7 @@
 #include <vtkGESignaReader.h>
 #include <vtkImageData.h>
 #include <vtkJPEGReader.h>
+#include <vtkMedicalImageProperties.h>
 #include <vtkMetaImageReader.h>
 #include <vtkMINCImageReader.h>
 #include <vtkNew.h>
@@ -23,11 +24,14 @@
 #include <vtkPNGReader.h>
 #include <vtkPNMReader.h>
 #include <vtkSLCReader.h>
-#include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkXMLImageDataReader.h>
 
+#include <gdcmDirectoryHelper.h>
+#include <gdcmImageReader.h>
+
+#include <map>
 #include <sstream>
 #include <stdexcept>
 
@@ -37,13 +41,20 @@ vtkCxxSetObjectMacro( vtkImageDataReader, Reader, vtkAlgorithm );
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 vtkImageDataReader::vtkImageDataReader()
 {
-  this->Reader = 0;
+  this->Reader = NULL;
+  this->MedicalImageProperties = vtkSmartPointer<vtkMedicalImageProperties>::New();
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 vtkImageDataReader::~vtkImageDataReader()
 {
-  this->SetReader(0);
+  this->SetReader( NULL );
+}
+  
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+vtkMedicalImageProperties* vtkImageDataReader::GetMedicalImageProperties()
+{
+  return this->MedicalImageProperties;
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -52,7 +63,7 @@ void vtkImageDataReader::SetFileName( const char* fileName )
   std::string fileExtension, filePath, fileNameOnly, 
     fileNameStr( fileName );
 
-  if( this->FileName.empty() && fileName == 0 )
+  if( this->FileName.empty() && fileName == NULL )
   {
     return;
   }
@@ -196,10 +207,10 @@ void vtkImageDataReader::SetFileName( const char* fileName )
       this->SetReader( XMLImageDataReader );
     }
   }
-  else // don't know how to handle this file, set the reader to 0 and
+  else // don't know how to handle this file, set the reader to NULL and
        // mark the file type as unknown
   {
-    this->SetReader( 0 );
+    this->SetReader( NULL );
     std::stringstream error;
     error << "Unable to read '" << fileNameOnly << "', unknown file type.";
     throw std::runtime_error( error.str() );
@@ -209,7 +220,7 @@ void vtkImageDataReader::SetFileName( const char* fileName )
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 bool vtkImageDataReader::IsValidFileName( const char* fileName )
 {
-  if( fileName == 0 || !Birch::Utilities::fileExists( fileName ) )
+  if( fileName == NULL || !Birch::Utilities::fileExists( fileName ) )
   {
     return false;
   }
@@ -238,7 +249,10 @@ bool vtkImageDataReader::IsValidFileName( const char* fileName )
   if( std::string::npos != Birch::Utilities::toLower(
         GDCMImageReader->GetFileExtensions() ).find( fileExtension ) )
   { // DICOM
-    knownFileType = true;
+    if( GDCMImageReader->CanReadFile( fileName ) )
+    {
+      knownFileType = true;
+    }  
   }
   else if( std::string::npos != Birch::Utilities::toLower(
     BMPReader->GetFileExtensions() ).find( fileExtension ) )
@@ -333,7 +347,7 @@ bool vtkImageDataReader::IsValidFileName( const char* fileName )
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 vtkImageData* vtkImageDataReader::GetOutputAsNewInstance()
 {
-  vtkImageData* newImage = 0;
+  vtkImageData* newImage = NULL;
   vtkImageData* image = this->GetOutput();
 
   if( image )
@@ -351,15 +365,16 @@ vtkImageData* vtkImageDataReader::GetOutputAsNewInstance()
 vtkImageData* vtkImageDataReader::GetOutput()
 {
   std::string fileNameOnly;
-  vtkXMLImageDataReader* XMLReader;
-  vtkGDCMImageReader* gdcmReader;
-  vtkImageReader2* imageReader;
-  vtkImageData* image = 0;
+  vtkXMLImageDataReader* XMLReader = NULL;
+  vtkGDCMImageReader* gdcmReader = NULL;
+  vtkImageReader2* imageReader = NULL;
+  vtkImageData* image = NULL;
+  this->MedicalImageProperties->Clear();
 
   // if the file name or reader are null simply return null
-  if( this->FileName.empty() || 0 == this->Reader )
+  if( this->FileName.empty() || NULL == this->Reader )
   {
-    return 0;
+    return NULL;
   }
 
   // we might need this
@@ -422,12 +437,8 @@ vtkImageData* vtkImageDataReader::GetOutput()
     // we know that Reader must be a vtkImageReader2 object
     imageReader = vtkImageReader2::SafeDownCast( this->Reader );
 
-    // see if we have already read the data from the disk, and return it if we have
-    if( this->ReadMTime >= this->GetMTime() )
-    {
-      image = imageReader->GetOutput();
-    }
-    else // this reader is not up to date, re-read the file
+    // if this reader is not up to date, re-read the file
+    if( this->ReadMTime < this->GetMTime() )
     {
       // the GDCM reader has not implemented CanReadFile, so skip that check
       if( !imageReader->IsA( "vtkGDCMImageReader" ) )
@@ -446,8 +457,53 @@ vtkImageData* vtkImageDataReader::GetOutput()
 
       // get a reference to the (updated) output image
       imageReader->Update();
-      image = imageReader->GetOutput();
     }
+    image = imageReader->GetOutput();
+  }
+
+  // if we did get an image, check that it has valid extents:
+  // GetNumberOfCells is zero for invalid vtkImageData Extents
+  if( image )
+  {
+    vtkIdType nCells = image->GetNumberOfCells();
+    if( nCells == 0 )
+    {    
+      return NULL;
+    }
+  }
+
+  // set up the medical image properties
+  if( this->Reader->IsA( "vtkGESignaReader" ) )
+  {
+    vtkGESignaReader* imageReader = vtkGESignaReader::SafeDownCast( this->Reader );
+    this->MedicalImageProperties->DeepCopy( imageReader->GetMedicalImageProperties() );
+  }
+  else if( this->Reader->IsA( "vtkGDCMImageReader" ) )
+  {
+    vtkGDCMImageReader* imageReader = vtkGDCMImageReader::SafeDownCast( this->Reader );
+    this->MedicalImageProperties->DeepCopy( imageReader->GetMedicalImageProperties() );
+    
+    gdcm::ImageReader reader;
+    reader.SetFileName( imageReader->GetFileName() );
+    reader.Read();
+    const gdcm::File &file = reader.GetFile();
+    const gdcm::DataSet &ds = file.GetDataSet();
+    
+    std::map< std::string, gdcm::Tag > dicomMap;
+    dicomMap["AcquisitionDateTime"] = gdcm::Tag( 0x0008, 0x002a );
+    dicomMap["SeriesNumber"] = gdcm::Tag( 0x0020, 0x0011 );
+    dicomMap["CineRate"] = gdcm::Tag( 0x0018, 0x0040 );
+    dicomMap["RecommendedDisplayFrameRate"] = gdcm::Tag( 0x0008, 0x2114 );
+    
+    std::map< std::string, gdcm::Tag >::const_iterator it;
+    for( it = dicomMap.begin(); it != dicomMap.end(); ++it )
+    {
+      if( ds.FindDataElement( it->second ) )
+      {
+        this->MedicalImageProperties->AddUserDefinedValue( it->first.c_str(),
+          gdcm::DirectoryHelper::GetStringValueFromTag( it->second, ds ).c_str() );
+      }
+    }  
   }
 
   this->ReadMTime.Modified();

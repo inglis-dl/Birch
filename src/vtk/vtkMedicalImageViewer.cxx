@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Program:   Alder (A simple image viewer)
+  Program:   Alder (CLSA Medical Image Quality Assessment Tool)
   Module:    vtkMedicalImageViewer.cxx
   Language:  C++
 
@@ -24,6 +24,7 @@
 #include <vtkImageSinusoidSource.h>
 #include <vtkImageWindowLevel.h>
 #include <vtkCustomInteractorStyleImage.h>
+#include <vtkMedicalImageProperties.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
@@ -142,10 +143,13 @@ vtkMedicalImageViewer::vtkMedicalImageViewer()
   this->Annotate = 1;
   this->Interpolate = 0;
 
+  this->MaxFrameRate = 60;
+  this->FrameRate = 25;
+
   this->AnimationCue->SetStartTime(0.);
   this->AnimationScene->AddCue( this->AnimationCue );
   this->AnimationScene->SetModeToRealTime();
-  this->AnimationScene->SetFrameRate(25);
+  this->AnimationScene->SetFrameRate( this->FrameRate );
 
   this->AnimationPlayer->SetAnimationScene( this->AnimationScene );
   
@@ -237,7 +241,7 @@ void vtkMedicalImageViewer::SetInput( vtkImageData* input )
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-bool vtkMedicalImageViewer::Load( std::string fileName )
+bool vtkMedicalImageViewer::Load( const std::string& fileName )
 {
   bool success = false;
   if( vtkImageDataReader::IsValidFileName( fileName.c_str() ) )
@@ -249,6 +253,19 @@ bool vtkMedicalImageViewer::Load( std::string fileName )
     {
       this->SetInput( image );
       success = true;
+      vtkMedicalImageProperties* properties = reader->GetMedicalImageProperties();
+
+      // vtkMedicalImageProperties has a bug which crashes if the CineRate is checked for
+      // images with no 3rd dimension, so only set the frame rate for 3D images
+      if( this->GetImageDimensionality() == 3 )
+      {
+        if( NULL != properties->GetUserDefinedValue( "CineRate" ) )
+        {
+          this->SetMaxFrameRate( 
+            vtkVariant( properties->GetUserDefinedValue( "CineRate" ) ).ToInt() );
+          this->SetFrameRate( this->MaxFrameRate );  
+        }
+      }
     }  
   }
 
@@ -873,7 +890,7 @@ void vtkMedicalImageViewer::DoWindowLevel()
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void vtkMedicalImageViewer::CineLoop(bool loop)
+void vtkMedicalImageViewer::CineLoop( const bool& loop )
 {
   bool inplay = this->AnimationPlayer->IsInPlay();
   if( inplay ) this->AnimationPlayer->Stop();
@@ -915,12 +932,6 @@ void vtkMedicalImageViewer::CineStepBackward()
 void vtkMedicalImageViewer::CineStepForward()
 {
   this->AnimationPlayer->GoToNext();
-}
-
-//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void vtkMedicalImageViewer::SetCineFrameRate(int rate)
-{
-  this->AnimationScene->SetFrameRate(rate);
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -985,7 +996,7 @@ void vtkMedicalImageViewer::UnInstallCursor()
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void vtkMedicalImageViewer::SetCursor( int arg )
+void vtkMedicalImageViewer::SetCursor( const int& arg )
 {
   if( this->Cursor == arg )
   {
@@ -1002,7 +1013,7 @@ void vtkMedicalImageViewer::SetCursor( int arg )
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void vtkMedicalImageViewer::SetInterpolate( int arg )
+void vtkMedicalImageViewer::SetInterpolate( const int& arg )
 {
   this->Interpolate = arg;
   this->CursorWidget->SetCursoringMode( this->Interpolate ?
@@ -1015,7 +1026,7 @@ void vtkMedicalImageViewer::SetInterpolate( int arg )
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void vtkMedicalImageViewer::SetAnnotate( int arg )
+void vtkMedicalImageViewer::SetAnnotate( const int& arg )
 {
   this->Annotate = arg;
 
@@ -1025,6 +1036,15 @@ void vtkMedicalImageViewer::SetAnnotate( int arg )
     this->UnInstallAnnotation();
 
   if( this->GetInput() ) this->Render();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void vtkMedicalImageViewer::SetFrameRate( const int& arg )
+{
+  if( this->FrameRate == arg ) return;
+  if( arg > this->MaxFrameRate || arg < 0 ) return;
+  this->FrameRate = arg;
+  this->AnimationScene->SetFrameRate( this->FrameRate );
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -1086,4 +1106,6 @@ void vtkMedicalImageViewer::PrintSelf( ostream& os, vtkIndent indent )
   os << indent << "Annotate: " << this->Annotate << endl;
   os << indent << "Cursor: " << this->Cursor << endl;
   os << indent << "Interpolate: " << this->Interpolate << endl;
+  os << indent << "MaxFrameRate: " << this->MaxFrameRate << endl;
+  os << indent << "FrameRate: " << this->FrameRate << endl;
 }

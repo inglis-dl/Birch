@@ -23,12 +23,12 @@ FIND_PACKAGE( Qt4 REQUIRED )
 INCLUDE( ${QT_USE_FILE} )
 
 SET( BIRCH_ROOT_DIR ${PROJECT_SOURCE_DIR}/.. )
-SET( BIRCH_API_DIR ${BIRCH_ROOT_DIR}/api )
-SET( BIRCH_QT_DIR ${BIRCH_API_DIR}/interface/qt )
-SET( BIRCH_VTK_DIR ${BIRCH_API_DIR}/vtk )
+SET( BIRCH_SRC_DIR ${BIRCH_ROOT_DIR}/src )
+SET( BIRCH_QT_DIR ${BIRCH_SRC_DIR}/interface/qt )
+SET( BIRCH_VTK_DIR ${BIRCH_SRC_DIR}/vtk )
 
 # Configure the utitlities header
-CONFIGURE_FILE( ${BIRCH_API_DIR}/Utilities.h.in
+CONFIGURE_FILE( ${BIRCH_SRC_DIR}/Utilities.h.in
                 ${PROJECT_BINARY_DIR}/Utilities.h @ONLY IMMEDIATE )
 
 # Set up include directories
@@ -58,7 +58,7 @@ SET_SOURCE_FILES_PROPERTIES(
 ADD_LIBRARY( VTKBirch ${BIRCH_VTK_LIB_SOURCE} )
 
 SET( BIRCH_APP_SOURCE
-  ${BIRCH_API_DIR}/Birch.cxx
+  ${BIRCH_SRC_DIR}/Birch.cxx
   
   ${BIRCH_QT_DIR}/QBirchApplication.cxx
   ${BIRCH_QT_DIR}/QMainBirchWindow.cxx
@@ -113,12 +113,13 @@ TARGET_LINK_LIBRARIES( Birch
   vtkIO
   vtkCommon
   vtkgdcm
+  gdcmDSED
+  gdcmMSFF
   vtkCharts
   ${QT_LIBRARIES}
 )
 
 INSTALL( TARGETS Birch RUNTIME DESTINATION bin )
 
-SUBDIRS(${BIRCH_ROOT_DIR}/testing
-)
+#SUBDIRS(${BIRCH_ROOT_DIR}/testing)
 

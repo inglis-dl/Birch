@@ -1,7 +1,7 @@
 /*=======================================================================
 
   Module:    vtkMedicalImageViewer.h
-  Program:   Alder (A simple image viewer)
+  Program:   Alder (CLSA Medical Image Quality Assessment Tool)
   Language:  C++
   Author:    Patrick Emond <emondpd AT mcmaster DOT ca>
   Author:    Dean Inglis <inglisd AT mcmaster DOT ca>
@@ -85,7 +85,7 @@ public:
    * In some situations, a pipeline update will not cause a 
    * refresh render.  This method allows for forcing a render.
    */
-  virtual void Render( void );
+  virtual void Render();
   
   //@{
   /** 
@@ -104,7 +104,7 @@ public:
    * @param fileName Name of a file on disk
    * @return boolean
    */
-   bool Load( std::string fileName );
+   bool Load( const std::string& fileName );
 
   /**
    * Enum constants for orthonormal slice orientations. */
@@ -297,7 +297,7 @@ public:
    * Scrolling starts at the first slice, proceeds to the last slice and
    * then repeats.
    */
-  void CineLoop(bool);
+  void CineLoop( const bool& );
 
   /** Set the current slice to the first slice. */
   void CineRewind();
@@ -316,12 +316,6 @@ public:
    */
   void CineStop();
 
-  /** 
-   * Set the rate in frames per second.  Sets the vtkAnimationScene's 
-   * FrameRate ivar.  Default 25.
-   */
-  void SetCineFrameRate( int );
-
   /**
    * Turn cursoring on or off.  Cursoring works in concert with
    * corner annotation.  If cursoring is off, the cursor widget
@@ -330,16 +324,16 @@ public:
    * is off, cursoring can still be active with its output directed
    * via callback mechanism to another GUI element.
    */
-  void SetCursor( int );
-  vtkBooleanMacro(Cursor,int);
-  vtkGetMacro(Cursor, int );
+  void SetCursor( const int& );
+  vtkBooleanMacro( Cursor, const int& );
+  vtkGetMacro( Cursor, int );
 
   /**
    * Turn annotation on or off in the render window.
    */
-  void SetAnnotate( int );
-  vtkBooleanMacro(Annotate,int);
-  vtkGetMacro(Annotate, int );
+  void SetAnnotate( const int& );
+  vtkBooleanMacro( Annotate, const int& );
+  vtkGetMacro( Annotate, int );
 
   /**
    * Turns interpolation on or off for both the cursor widget
@@ -351,9 +345,21 @@ public:
    * mode using interpolation of pixel values and the image actor
    * shows pixels with linear interpolation.
    */
-  void SetInterpolate( int );
-  vtkBooleanMacro(Interpolate,int);
-  vtkGetMacro(Interpolate, int );
+  void SetInterpolate( const int& );
+  vtkBooleanMacro( Interpolate, const int& );
+  vtkGetMacro( Interpolate, int );
+
+  /**
+   * Set/Get animation maximum frame rate
+   */
+  vtkSetClampMacro( MaxFrameRate, int, 0, 60 );
+  vtkGetMacro( MaxFrameRate, int );
+
+  /**
+   * Set/Get animation frame rate
+   */
+  void SetFrameRate( const int& );
+  vtkGetMacro( FrameRate, int );
 
 protected:
   vtkMedicalImageViewer();
@@ -423,9 +429,12 @@ protected:
   /** Record the current camera parameters */
   void RecordCameraView();
 
+  /** Animation control */
   vtkSmartPointer<vtkAnimationScene> AnimationScene;
   vtkSmartPointer<vtkAnimationCue> AnimationCue;
   vtkSmartPointer<vtkFrameAnimationPlayer> AnimationPlayer;
+  int MaxFrameRate;
+  int FrameRate;
 
 private:
   vtkMedicalImageViewer(const vtkMedicalImageViewer&);  /** Not implemented. */
