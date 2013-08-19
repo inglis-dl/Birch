@@ -1,5 +1,12 @@
 /*==============================================================================
 
+  Module:    vtkBirchQFramePlayerWidget.cxx
+  Program:   Birch (A Simple Image Viewer)
+  Language:  C++
+  Author:    Patrick Emond <emondpd AT mcmaster DOT ca>
+  Author:    Dean Inglis <inglisd AT mcmaster DOT ca>
+
+
   Library: MSVTK
 
   Copyright (c) Kitware Inc.
@@ -17,19 +24,18 @@
   limitations under the License.
 
 ==============================================================================*/
+// Birch includes
+#include <vtkBirchQFramePlayerWidget.h>
+#include <ui_vtkBirchQFramePlayerWidget.h>
 
 // Qt includes
 #include <QIcon>
 #include <QTime>
 #include <QTimer>
 
-// Birch includes
-#include <vtkBirchQFramePlayerWidget.h>
-#include <ui_vtkBirchQFramePlayerWidget.h>
-
 // VTK includes
-#include <vtkMedicalImageViewer.h>
 #include <vtkMath.h>
+#include <vtkMedicalImageViewer.h>
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
@@ -62,6 +68,7 @@ public:
     unsigned int numberOfFrames;
     double frameRange[2];
     double currentFrame;
+    int maxFrameRate;
 
     void printSelf()const;
     double clampTimeInterval(double, double) const; // Transform a frameRate into a time interval
@@ -78,8 +85,9 @@ public:
 };
 
 //------------------------------------------------------------------------------
+//
 // vtkBirchQFramePlayerWidgetPrivate methods
-
+//
 //------------------------------------------------------------------------------
 vtkBirchQFramePlayerWidgetPrivate::vtkBirchQFramePlayerWidgetPrivate
 (vtkBirchQFramePlayerWidget& object)
@@ -99,6 +107,7 @@ vtkBirchQFramePlayerWidgetPrivate::PipelineInfoType::PipelineInfoType()
   : isConnected(false)
   , numberOfFrames(0)
   , currentFrame(0)
+  , maxFrameRate(60)
 {
   this->frameRange[0] = 0;
   this->frameRange[1] = 0;
@@ -112,6 +121,7 @@ void vtkBirchQFramePlayerWidgetPrivate::PipelineInfoType::printSelf()const
             << "Number of image frames: " << this->numberOfFrames << std::endl
             << "Frame range: " << this->frameRange[0] << " " << this->frameRange[1] << std::endl
             << "Last frame request: " << this->currentFrame << std::endl
+            << "Maximum frame rate: " << this->maxFrameRate << std::endl
             << "Is connected: " << this->isConnected << std::endl;
 
 }
@@ -134,6 +144,8 @@ vtkBirchQFramePlayerWidgetPrivate::retrievePipelineInfo()
   pipeInfo.frameRange[1] = this->viewer->GetSliceMax();
   
   pipeInfo.currentFrame = this->viewer->GetSlice();
+  pipeInfo.maxFrameRate = this->viewer->GetMaxFrameRate();
+
   return pipeInfo;
 }
 
@@ -221,6 +233,8 @@ void vtkBirchQFramePlayerWidgetPrivate::updateUi(const PipelineInfoType& pipeInf
   this->playReverseButton->setEnabled((pipeInfo.numberOfFrames > 1));
   this->nextFrameButton->setEnabled((pipeInfo.currentFrame < pipeInfo.frameRange[1]));
   this->lastFrameButton->setEnabled((pipeInfo.currentFrame < pipeInfo.frameRange[1]));
+  this->repeatButton->setEnabled((pipeInfo.numberOfFrames > 1));
+  this->speedFactorSpinBox->setEnabled((pipeInfo.numberOfFrames > 1));
 
   // Slider
   this->frameSlider->blockSignals(true);
@@ -228,6 +242,15 @@ void vtkBirchQFramePlayerWidgetPrivate::updateUi(const PipelineInfoType& pipeInf
   this->frameSlider->setRange(pipeInfo.frameRange[0], pipeInfo.frameRange[1]);
   this->frameSlider->setValue(pipeInfo.currentFrame);
   this->frameSlider->blockSignals(false);
+
+  // SpinBox
+  // the max frame rate from the pipeinfo object is set fom the viewer's information
+  // about frame rate.  The value of the speed factor spin box set here is a suggested
+  // value.  The speed can be set and is clamped between 1 and whatever the max frame
+  // rate set through the QAlderFramePlayerWidget's maxFrameRate property.
+  this->speedFactorSpinBox->blockSignals( true );
+  this->speedFactorSpinBox->setValue( pipeInfo.maxFrameRate );
+  this->speedFactorSpinBox->blockSignals( false );
 }
 
 //------------------------------------------------------------------------------
@@ -275,8 +298,9 @@ bool vtkBirchQFramePlayerWidgetPrivate::isConnected()
 }
 
 //------------------------------------------------------------------------------
+//
 // vtkBirchQFramePlayerWidget methods
-
+//
 //------------------------------------------------------------------------------
 vtkBirchQFramePlayerWidget::vtkBirchQFramePlayerWidget(QWidget* parentWidget)
   : Superclass(parentWidget)
@@ -541,10 +565,9 @@ void vtkBirchQFramePlayerWidget::setPlaySpeed(double speedFactor)
 }
 
 //------------------------------------------------------------------------------
-// vtkBirchQECGMainWindow methods -- Widgets Interface
-
-//------------------------------------------------------------------------------
-
+//
+// vtkBirchQFramePlayerWidget methods -- Widgets Interface
+//
 //------------------------------------------------------------------------------
 void vtkBirchQFramePlayerWidget::setFirstFrameIcon(const QIcon& ico)
 {
