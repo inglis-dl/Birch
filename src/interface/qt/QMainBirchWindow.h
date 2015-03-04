@@ -21,6 +21,8 @@ class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkObject;
 class QAction;
+class QWidget;
+class QSignalMapper;
 
 #include "vtkSmartPointer.h"
 
@@ -36,6 +38,7 @@ public:
   void updateInterface();
   void buildHistogram();
   void buildLabels();
+  void configureSharpenInterface();
 
 public slots:
   // action event functions
@@ -43,6 +46,10 @@ public slots:
   void openRecentFile();
   void initialize();
   void processEvents();
+  void onMapped(QWidget*);
+  void sharpenImage();
+  void reloadImage();
+  
 
 protected:
   // called whenever the main window is closed
@@ -62,11 +69,14 @@ private:
   QString strippedName(const QString &fullFileName);
   void setCurrentFile(const QString &fileName);
   void loadFile(const QString &fileName);
+  void buildSharpenInterface();
 
   QString currentFile;
   enum { MaxRecentFiles = 10 };
   QAction* recentFileActs[MaxRecentFiles];
   QAction* separatorAct;
+
+  QSignalMapper* signalMapper;
 };
 
 #endif

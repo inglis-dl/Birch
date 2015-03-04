@@ -23,15 +23,23 @@
 #include "vtkRenderer.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkMedicalImageViewer.h"
+#include "vtkImageSharpen.h"
 
 #include "vtkEventQtSlotConnect.h"
 
 #include <QCloseEvent>
 #include <QFileDialog>
-#include <QString>
+#include <QLabel>
 #include <QMessageBox>
+#include <QProgressBar>
 #include <QScrollBar>
 #include <QSettings>
+#include <QSignalMapper>
+#include <QSlider>
+#include <QString>
+#include <QWidgetItem>
+
+#include "vtkBirchDoubleSlider.h"
 
 #include "vtkImageHistogram.h"
 #include "vtkIdTypeArray.h"
@@ -44,10 +52,29 @@
 #include "vtkContextView.h"
 #include "vtkContextScene.h"
 
- 
 #define VTK_CREATE(type, name) \
   vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
- 
+
+class vtkSharpenProgressCallback : public vtkCommand
+{
+  public:
+    static vtkSharpenProgressCallback *New() {
+     return new vtkSharpenProgressCallback; }
+
+    void Execute( vtkObject* caller, unsigned long vtkNotUsed(event),
+                  void * callData )
+    {
+      vtkImageSharpen* self = vtkImageSharpen::SafeDownCast(caller);
+      double* progress = (double*)callData;
+      progressBar->setValue( (int)((*progress) * 100) );
+      QApplication::processEvents();
+    }
+
+  vtkSharpenProgressCallback(){}
+  ~vtkSharpenProgressCallback(){}
+  QProgressBar* progressBar;
+};
+
 
 /*
 class QMainBirchWindowProgressCommand : public vtkCommand
@@ -104,7 +131,7 @@ QMainBirchWindow::QMainBirchWindow( QWidget* parent )
   this->Viewer->SetRenderWindow( renwin  );
   this->Viewer->InterpolateOff();
 
-  renwin = this->ui->histogramView->GetRenderWindow();
+  renwin = this->ui->imageHistogramView->GetRenderWindow();
   
   VTK_CREATE(vtkRenderer, ren);
   ren->SetBackground(1,1,1);
@@ -123,10 +150,12 @@ QMainBirchWindow::QMainBirchWindow( QWidget* parent )
   this->Connections->Connect(this->Viewer->GetRenderWindow()->GetInteractor(),
     vtkCommand::MouseMoveEvent, this, SLOT(processEvents()) );
 */ 
-  this->currentFile = "";
+  this->setCurrentFile( "" );
 
   this->setCorner( Qt::BottomLeftCorner, Qt::BottomDockWidgetArea );
   this->setCorner( Qt::BottomRightCorner, Qt::RightDockWidgetArea );
+
+  this->buildSharpenInterface();
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -138,6 +167,44 @@ QMainBirchWindow::~QMainBirchWindow()
 void QMainBirchWindow::processEvents()
 {
   QApplication::processEvents();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::onMapped(QWidget* widget)
+{
+  QObject* mappedWidget = this->signalMapper->mapping( widget );
+  QLabel *label  = qobject_cast<QLabel*>( widget );
+  if( label && mappedWidget )
+  {
+    QString str = label->objectName();
+    int size = str.size();
+    int index = str.lastIndexOf(QString("Label"));
+    str.chop( size - index );
+    QString title = str.toLower();
+    title[0] = str[0].toUpper();
+    title.append(": ");
+    if( mappedWidget->metaObject()->className() == QString("QSlider") )
+    {
+      QSlider* slider = qobject_cast<QSlider*>( mappedWidget );  
+      title.append(QString::number(slider->value()));
+    }  
+    else if( mappedWidget->metaObject()->className() == QString("vtkBirchDoubleSlider") )
+    {
+      vtkBirchDoubleSlider* slider = qobject_cast<vtkBirchDoubleSlider*>( mappedWidget );  
+      title.append(QString::number(slider->value()));
+
+      double radius = this->ui->radiusSlider->value();
+      double stddev = this->ui->stddevSlider->value();
+      QString kernelVal = QString::number( 2 * static_cast<int>( stddev*radius ) + 1 );
+      QString kernelStr( "Kernel Size: " );
+      kernelStr.append( kernelVal );
+      kernelStr.append( " x " );
+      kernelStr.append( kernelVal );
+      this->ui->kernelSizeLabel->setText( kernelStr );
+    }  
+    
+    label->setText( title );
+  }
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -166,7 +233,7 @@ void QMainBirchWindow::slotOpen()
   // this addresses a known and unfixable problem with native dialogs in KDE
   dialog.setOption( QFileDialog::DontUseNativeDialog );
 
-  dialog.setNameFilter( tr( "Images (*.dcm *.png *.jpg *.jpeg *.tif *.tiff *.gif)" ) );
+  dialog.setNameFilter( tr( "Images (*.dcm *.png *.jpg *.jpeg *.tif *.tiff *.gif *.mhd);;All files(*.*)" ) );
   dialog.setFileMode( QFileDialog::ExistingFile );
   dialog.setModal( true );
   
@@ -182,20 +249,20 @@ void QMainBirchWindow::slotOpen()
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QMainBirchWindow::loadFile(const QString &fileName )
 {
-    try
-    {
-      this->Viewer->Load( fileName.toStdString() );
-    }
-    catch( std::exception &e )
-    {
-      QMessageBox errorMessage( this );
-      errorMessage.setWindowModality( Qt::WindowModal );
-      errorMessage.setIcon( QMessageBox::Warning );
-      errorMessage.setText( "There was an error while attempting to open the image." );
-      errorMessage.exec();
+  try
+  {
+    this->Viewer->Load( fileName.toStdString() );
+  }
+  catch( std::exception &e )
+  {
+    QMessageBox errorMessage( this );
+    errorMessage.setWindowModality( Qt::WindowModal );
+    errorMessage.setIcon( QMessageBox::Warning );
+    errorMessage.setText( "There was an error while attempting to open the image." );
+    errorMessage.exec();
 
-      this->Viewer->SetImageToSinusoid();
-    }
+    this->Viewer->SetImageToSinusoid();
+  }
   this->setCurrentFile( fileName );
   this->updateInterface();
 }
@@ -203,38 +270,42 @@ void QMainBirchWindow::loadFile(const QString &fileName )
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QMainBirchWindow::setCurrentFile(const QString &fileName)
 {
-     this->currentFile = fileName;
+  this->currentFile = fileName;
 
-     QSettings settings;
-     QStringList files = settings.value("recentFileList").toStringList();
-     files.removeAll(fileName);
-     files.prepend(fileName);
-     while (files.size() > MaxRecentFiles)
-         files.removeLast();
+  QSettings settings;
+  QStringList files = settings.value("recentFileList").toStringList();
+  files.removeAll(fileName);
 
-     settings.setValue("recentFileList", files);
+  QFileInfo checkFile( fileName );
+  if( checkFile.exists() && checkFile.isFile() )
+    files.prepend(fileName);
+  while (files.size() > MaxRecentFiles)
+    files.removeLast();
 
-     int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
+  settings.setValue("recentFileList", files);
 
-     for (int i = 0; i < numRecentFiles; ++i) {
-         QString text = tr("&%1 %2").arg(i + 1).arg(this->strippedName(files[i]));
-         this->recentFileActs[i]->setText(text);
-         this->recentFileActs[i]->setData(files[i]);
-         this->recentFileActs[i]->setVisible(true);
-     }
-     for (int j = numRecentFiles; j < MaxRecentFiles; ++j)
-         this->recentFileActs[j]->setVisible(false);
+  int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
 
-     this->separatorAct->setVisible(numRecentFiles > 0);
- }
+  for (int i = 0; i < numRecentFiles; ++i)
+  {
+    QString text = tr("&%1 %2").arg(i + 1).arg(this->strippedName(files[i]));
+    this->recentFileActs[i]->setText(text);
+    this->recentFileActs[i]->setData(files[i]);
+    this->recentFileActs[i]->setVisible(true);
+  }
+  for (int j = numRecentFiles; j < MaxRecentFiles; ++j)
+    this->recentFileActs[j]->setVisible(false);
+
+  this->separatorAct->setVisible(numRecentFiles > 0);
+}
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
- void QMainBirchWindow::openRecentFile()
- {
-     QAction *action = qobject_cast<QAction *>(sender());
-     if (action)
-         loadFile(action->data().toString());
- }
+void QMainBirchWindow::openRecentFile()
+{
+  QAction *action = qobject_cast<QAction *>(sender());
+  if (action)
+    loadFile(action->data().toString());
+}
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 QString QMainBirchWindow::strippedName(const QString &fullFileName)
@@ -248,6 +319,8 @@ void QMainBirchWindow::updateInterface()
   this->ui->framePlayerWidget->updateFromViewer();
   this->buildHistogram();
   this->buildLabels();
+  this->ui->dicomTagWidget->updateTableWidget( this->currentFile.toStdString() );
+  this->configureSharpenInterface();
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -266,7 +339,7 @@ void QMainBirchWindow::buildLabels()
   QString str;
   int n = image->GetNumberOfScalarComponents();
   str =  vtkVariant(n).ToString();
-  this->ui->label_7->setText( str );
+  this->ui->labelImageChannelsValue->setText( str );
 
   double* o = image->GetOrigin();
   str =  vtkVariant(o[0]).ToString();
@@ -274,7 +347,7 @@ void QMainBirchWindow::buildLabels()
   str +=  vtkVariant(o[1]).ToString();
   str += ", ";
   str +=  vtkVariant(o[2]).ToString();
-  this->ui->label_8->setText( str );
+  this->ui->labelImageOriginValue->setText( str );
 
   double* s = image->GetSpacing();
   str =  vtkVariant(s[0]).ToString();
@@ -282,7 +355,7 @@ void QMainBirchWindow::buildLabels()
   str +=  vtkVariant(s[1]).ToString();
   str += ", ";
   str +=  vtkVariant(s[2]).ToString();
-  this->ui->label_9->setText( str );
+  this->ui->labelImageSpacingValue->setText( str );
 
   int* d = image->GetDimensions();
   str =  vtkVariant(d[0]).ToString();
@@ -290,10 +363,10 @@ void QMainBirchWindow::buildLabels()
   str +=  vtkVariant(d[1]).ToString();
   str += " x ";
   str +=  vtkVariant(d[2]).ToString();
-  this->ui->label_10->setText( str );
+  this->ui->labelImageDimensionsValue->setText( str );
 
   str = image->GetScalarTypeAsString();
-  this->ui->label_11->setText( str );
+  this->ui->labelImageScalarTypeValue->setText( str );
 
   double range[2];
   double min = image->GetScalarTypeMax();
@@ -309,12 +382,12 @@ void QMainBirchWindow::buildLabels()
   str += ", ";
   str += vtkVariant(max).ToString();
   str += "]";
-  this->ui->label_12->setText( str );
+  this->ui->labelImageScalarRangeValue->setText( str );
 
   QFileInfo info(this->currentFile);
-  this->ui->label_14->setText( info.fileName() );
+  this->ui->labelFileNameValue->setText( info.fileName() );
   str = vtkVariant( info.size() ).ToString();
-  this->ui->label_16->setText( str ); 
+  this->ui->labelFileByteSizeValue->setText( str ); 
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -393,3 +466,79 @@ void QMainBirchWindow::buildHistogram()
   }
 }
 
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::sharpenImage()
+{
+  vtkImageData* image = this->Viewer->GetInput();
+  if(!image) return;
+
+  double radius = this->ui->radiusSlider->value();
+  double weight = this->ui->weightSlider->value();
+  double stddev = this->ui->stddevSlider->value();
+  if( 0.0 == weight ) return;
+
+  VTK_CREATE(vtkImageSharpen, sharpen);
+  sharpen->SetRadius( radius );
+  sharpen->SetWeight( weight );
+  sharpen->SetStandardDeviation( stddev );
+  sharpen->SetInput( image );
+  VTK_CREATE( vtkSharpenProgressCallback, cbk );
+  cbk->progressBar = this->ui->sharpenProgressBar;
+  sharpen->AddObserver( vtkCommand::ProgressEvent, cbk );
+  sharpen->Update();  
+  this->Viewer->MaintainLastViewOn();
+  this->Viewer->RecordCameraView();
+  this->Viewer->SetInput( sharpen->GetOutput() );
+  this->updateInterface();
+  this->Viewer->MaintainLastViewOff();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::reloadImage()
+{
+  this->Viewer->MaintainLastViewOn();
+  this->Viewer->RecordCameraView();
+  this->Viewer->Load( this->currentFile.toStdString() );
+  this->updateInterface();
+  this->Viewer->MaintainLastViewOff();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::configureSharpenInterface()
+{
+  bool enable = 2 == this->Viewer->GetImageDimensionality(); 
+  QLayoutItem* child;
+  for (int i = 0; i < this->ui->sharpenGridLayout->count(); i++ )
+  {
+    QLayoutItem* const item = this->ui->sharpenGridLayout->itemAt( i );
+    if( item->widget() )
+      item->widget()->setEnabled( enable );
+  }
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::buildSharpenInterface()
+{
+  this->ui->radiusSlider->setSingleStep( 0.1 );
+  this->ui->radiusSlider->setPageStep( 1.0 );
+  this->ui->radiusSlider->setMaximum( 10.0 );
+  this->ui->stddevSlider->setSingleStep( 0.1 );
+  this->ui->stddevSlider->setPageStep( 1.0 );
+  this->ui->stddevSlider->setMaximum( 10.0 );
+
+  this->signalMapper = new QSignalMapper(this);
+  connect( this->ui->radiusSlider, SIGNAL(valueChanged(double)), signalMapper, SLOT(map()) );
+  this->signalMapper->setMapping( this->ui->radiusSlider, this->ui->radiusLabel );
+  connect( this->ui->weightSlider, SIGNAL(valueChanged(int)), signalMapper, SLOT(map()) );
+  this->signalMapper->setMapping( this->ui->weightSlider, this->ui->weightLabel );
+  connect( this->ui->stddevSlider, SIGNAL(valueChanged(double)), signalMapper, SLOT(map()) );
+  this->signalMapper->setMapping( this->ui->stddevSlider, this->ui->stddevLabel );
+  connect( this->signalMapper, SIGNAL(mapped(QWidget*)), this, SLOT(onMapped(QWidget*)) );
+
+  this->ui->radiusSlider->setValue( this->ui->radiusSlider->singleStep() );
+  this->ui->weightSlider->setValue( this->ui->weightSlider->singleStep() );
+  this->ui->stddevSlider->setValue( this->ui->stddevSlider->singleStep() );
+
+  connect( this->ui->doSharpenPushButton, SIGNAL( clicked() ), this, SLOT( sharpenImage() ) );
+  connect( this->ui->undoSharpenPushButton, SIGNAL( clicked() ), this, SLOT( reloadImage() ) );
+}

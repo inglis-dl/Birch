@@ -59,12 +59,14 @@
 #include "vtkSmartPointer.h"
 #include <vector>
 
+class vtkAxesActor;
 class vtkCustomCornerAnnotation;
+class vtkCustomInteractorStyleImage;
 class vtkImageActor;
 class vtkImageCoordinateWidget;
 class vtkImageData;
 class vtkImageWindowLevel;
-class vtkCustomInteractorStyleImage;
+class vtkOrientationMarkerWidget;
 class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
@@ -263,6 +265,19 @@ public:
   //@}
 
   //@{
+  /**
+   * Set the view settings (camera, slice)  of the next image to be the same as the last one.
+   * Default is off.
+   */
+  vtkSetMacro( MaintainLastView, int );
+  vtkGetMacro( MaintainLastView, int );
+  vtkBooleanMacro( MaintainLastView, int );
+
+  /** Record the current camera parameters */
+  void RecordCameraView();
+
+  //@}
+  //@{
   /** Window level control for callbacks and VTK events. */
   void DoStartWindowLevel();
   void DoResetWindowLevel();
@@ -336,6 +351,13 @@ public:
   vtkGetMacro( Annotate, int );
 
   /**
+   * Turn axes marker on or off in the render window.
+   */
+  void SetAxesDisplay( const int& );
+  vtkBooleanMacro( AxesDisplay, const int& );
+  vtkGetMacro( AxesDisplay, int );
+
+  /**
    * Turns interpolation on or off for both the cursor widget
    * and the image actor simultaneously.  Off state sets the
    * cursor widget to use discrete cursoring mode: the cursor 
@@ -376,6 +398,8 @@ protected:
   void UnInstallCursor();
   void InstallAnnotation();
   void UnInstallAnnotation();
+  void InstallAxes();
+  void UnInstallAxes();
   //@}
 
   //@{
@@ -388,11 +412,14 @@ protected:
   vtkCustomInteractorStyleImage   *InteractorStyle;
   vtkSmartPointer<vtkImageCoordinateWidget> CursorWidget;
   vtkSmartPointer<vtkCustomCornerAnnotation> Annotation;
+  vtkSmartPointer<vtkAxesActor> AxesActor;
+  vtkSmartPointer<vtkOrientationMarkerWidget> AxesWidget;
   //@}
 
   int Cursor;
   int Annotate;
   int Interpolate;
+  int AxesDisplay;
 
   int Slice;        /**< Current slice index */
   int LastSlice[3]; /**< Keeps track of last slice when changing orientation */
@@ -418,6 +445,8 @@ protected:
     */
   void InitializeWindowLevel();
 
+  /** Maintain view settings between image changes */
+  int MaintainLastView; 
   int ViewOrientation;              /**< Current view orientation: XY, XZ, YZ */
   double CameraPosition[3][3];      /**< Current camera position */
   double CameraFocalPoint[3][3];    /**< Current camera focal point */
@@ -426,8 +455,6 @@ protected:
 
   /** Set up the default camera parameters based on input data dimensions etc. */
   void InitializeCameraViews();
-  /** Record the current camera parameters */
-  void RecordCameraView();
 
   /** Animation control */
   vtkSmartPointer<vtkAnimationScene> AnimationScene;

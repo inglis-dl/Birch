@@ -110,21 +110,25 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
      return;
    }
  
+   double progressGoal = 10.;
+   int    progressCount = 0;
+   double currentProgress = 0.;
+   double deltaProgress = 1.0 / progressGoal;
+   self->UpdateProgress(progressCount++/progressGoal);
+
    double inputRange[2];
    input->GetScalarRange(inputRange);
    int inputMin = static_cast<int>(inputRange[0]);
    int inputMax = static_cast<int>(inputRange[1]);
 
-   double progressGoal = 14.;
-   int    progressCount = 0;
-   
    // cast the input to float
    //
    vtkNew<vtkImageCast> caster;
    caster->SetOutputScalarTypeToFloat();
    caster->SetInput(input);
 
-   progressCount++;
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 1 / 10
 
    stddev = stddev < 0. ? fabs(stddev) : stddev;
    radius = radius < 0. ? fabs(radius) : radius;
@@ -137,7 +141,8 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    smoother->SetStandardDeviation( stddev );
    smoother->SetInputConnection( caster->GetOutputPort() );
 
-   progressCount++;
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 2 / 10
 
    // smooth the smoothed input with a gaussian kernel
    //
@@ -148,12 +153,11 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    smoother2->SetInputConnection( smoother->GetOutputPort() );
    smoother2->Update();
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 3 / 10
 
    vtkNew<vtkImageData> smooth1;
    smooth1->DeepCopy( smoother->GetOutput() );
-
-   self->UpdateProgress(progressCount++/progressGoal);
 
    // compute the difference of gaussians
    //
@@ -163,7 +167,8 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    m1->SetInput2( smoother2->GetOutput() );
    m1->Update();
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 4 / 10
 
    // add the scaled difference of gaussians to the input
    //
@@ -173,12 +178,11 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    m2->SetInput1( m1->GetOutput() );
    m2->Update();
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 5 / 10
 
    vtkNew<vtkImageData> orig;
    orig->DeepCopy( caster->GetOutput() );
-
-   self->UpdateProgress(progressCount++/progressGoal);
 
    vtkNew<vtkImageMathematics> m3;
    m3->SetOperationToAdd();
@@ -186,12 +190,13 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    m3->SetInput2( orig.GetPointer() );
    m3->Update();
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 6 / 10
 
    double range = m3->GetOutput()->GetScalarRange()[1] -
                   m3->GetOutput()->GetScalarRange()[0];
 
-   if( range == 0. )
+   if( 0. == range )
    {
      output->DeepCopy( input );
      return;
@@ -210,11 +215,10 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    shift->SetScale( m );
    shift->Update();
 
-   self->UpdateProgress(progressCount++/progressGoal);
-
    output->DeepCopy( shift->GetOutput() );
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 7 / 10
 
    // perform histogram matching
    // compute input and output normalized histograms
@@ -227,28 +231,38 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    std::map<int, unsigned long int> histo_source;
    std::map<int, unsigned long int> histo_target;
+
+   double delta = max - min + 1;
+   int percent_done =  0;
+   
    for( int i = min; i <= max; i++ )
    {
      histo_source.insert( std::pair<int, unsigned long int>(i, 0L) );
+     percent_done = (int)( i * 100.0 / delta);
+     if( 0 == percent_done % 10 )
+       self->UpdateProgress(  i * deltaProgress / delta );
    }
    histo_target.insert( histo_source.begin(), histo_source.end() );
-
-   self->UpdateProgress(progressCount++/progressGoal);
 
    vtkDataArray* indata = input->GetPointData()->GetScalars();
    vtkDataArray* outdata = output->GetPointData()->GetScalars();
    std::map<int, unsigned long int>::iterator sit;
    std::map<int, unsigned long int>::iterator oit;
    int size = indata->GetNumberOfTuples();
+   delta = size;
+   percent_done = 0;
    for( int i = 0; i < size; i++ )
    {
      sit = histo_source.find(static_cast<int>( indata->GetTuple1(i) ));
      if(sit != histo_source.end()) sit->second++;
      oit = histo_target.find(static_cast<int>( outdata->GetTuple1(i) ));
      if(oit != histo_target.end()) oit->second++;
+     percent_done = (int)( i * 100.0 / delta);
+     if( 0 == percent_done % 10 )
+       self->UpdateProgress(  i * deltaProgress / delta + currentProgress );
    }
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   self->UpdateProgress( currentProgress ); // 8 / 10
 
    // compute input and output cumulative distribution functions
    //
@@ -268,7 +282,8 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
       oit++;
    }
 
-   self->UpdateProgress(progressCount++/progressGoal);
+   currentProgress = progressCount++/progressGoal;
+   self->UpdateProgress( currentProgress ); // 9 / 10
 
    // perform histogram matching on output image
    //
@@ -279,6 +294,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
      if( oit != cdf_target.end() )
      {
        sit = cdf_source.find( oit->second );
+       /*
        if( sit == cdf_source.end() )
        {
          sit = cdf_source.begin();
@@ -287,12 +303,18 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
            sit++;
          }
        } 
+       */
        if( sit != cdf_source.end() && sit->first != value )
        {
          outdata->SetTuple1( i, sit->first );
        }
      }
+     percent_done = (int)( i * 100.0 / delta);
+     if( 0 == percent_done % 10 )
+       self->UpdateProgress(  i * deltaProgress / delta + currentProgress );
    }
+
+   self->UpdateProgress( 1.0 );
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-

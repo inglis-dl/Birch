@@ -45,6 +45,7 @@ SET( BIRCH_VTK_LIB_SOURCE
   ${BIRCH_VTK_DIR}/vtkFrameAnimationPlayer.cxx
   ${BIRCH_VTK_DIR}/vtkImageCoordinateWidget.cxx
   ${BIRCH_VTK_DIR}/vtkImageDataReader.cxx
+  ${BIRCH_VTK_DIR}/vtkImageDataWriter.cxx
   ${BIRCH_VTK_DIR}/vtkImageWindowLevel.cxx
   ${BIRCH_VTK_DIR}/vtkImageSharpen.cxx
   ${BIRCH_VTK_DIR}/vtkMedicalImageViewer.cxx
@@ -62,6 +63,7 @@ SET( BIRCH_APP_SOURCE
   
   ${BIRCH_QT_DIR}/QBirchApplication.cxx
   ${BIRCH_QT_DIR}/QMainBirchWindow.cxx
+  ${BIRCH_QT_DIR}/widgets/vtkBirchQDicomTagWidget.cxx
   ${BIRCH_QT_DIR}/widgets/vtkBirchDoubleSlider.cxx
   ${BIRCH_QT_DIR}/widgets/vtkBirchSliderWidget.cxx
   ${BIRCH_QT_DIR}/widgets/vtkBirchQFramePlayerWidget.cxx
@@ -69,12 +71,14 @@ SET( BIRCH_APP_SOURCE
 
 SET( BIRCH_QT_UIS
   ${BIRCH_QT_DIR}/QMainBirchWindow.ui
+  ${BIRCH_QT_DIR}/widgets/Resources/UI/vtkBirchQDicomTagWidget.ui
   ${BIRCH_QT_DIR}/widgets/Resources/UI/vtkBirchQFramePlayerWidget.ui
   ${BIRCH_QT_DIR}/widgets/Resources/UI/vtkBirchSliderWidget.ui
 )
 
 SET( BIRCH_QT_HEADERS
   ${BIRCH_QT_DIR}/QMainBirchWindow.h
+  ${BIRCH_QT_DIR}/widgets/vtkBirchQDicomTagWidget.h
   ${BIRCH_QT_DIR}/widgets/vtkBirchQFramePlayerWidget.h
   ${BIRCH_QT_DIR}/widgets/vtkBirchSliderWidget.h
   ${BIRCH_QT_DIR}/widgets/vtkBirchDoubleSlider.h
@@ -115,6 +119,7 @@ TARGET_LINK_LIBRARIES( Birch
   vtkgdcm
   gdcmDSED
   gdcmMSFF
+  gdcmDICT
   vtkCharts
   ${QT_LIBRARIES}
 )

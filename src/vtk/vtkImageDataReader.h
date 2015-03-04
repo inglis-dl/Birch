@@ -28,9 +28,9 @@
 #ifndef __vtkImageDataReader_h
 #define __vtkImageDataReader_h
 
-#include "vtkObject.h"
-#include "vtkSmartPointer.h"
-#include "vtkTimeStamp.h"
+#include <vtkObject.h>
+#include <vtkSmartPointer.h>
+#include <vtkTimeStamp.h>
 
 class vtkAlgorithm;
 class vtkImageData;

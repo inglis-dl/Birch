@@ -12,9 +12,11 @@
 
 #include <vtkAnimationCue.h>
 #include <vtkAnimationScene.h>
+#include <vtkAxesActor.h>
 #include <vtkCamera.h>
 #include <vtkCommand.h>
 #include <vtkCustomCornerAnnotation.h>
+#include <vtkCustomInteractorStyleImage.h>
 #include <vtkDataArray.h>
 #include <vtkFrameAnimationPlayer.h>
 #include <vtkImageActor.h>
@@ -23,10 +25,10 @@
 #include <vtkImageDataReader.h>
 #include <vtkImageSinusoidSource.h>
 #include <vtkImageWindowLevel.h>
-#include <vtkCustomInteractorStyleImage.h>
 #include <vtkMedicalImageProperties.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
+#include <vtkOrientationMarkerWidget.h>
 #include <vtkPointData.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -124,10 +126,16 @@ vtkMedicalImageViewer::vtkMedicalImageViewer()
   this->AnimationCue    = vtkSmartPointer<vtkAnimationCue>::New();
   this->AnimationScene  = vtkSmartPointer<vtkAnimationScene>::New();
   this->AnimationPlayer = vtkSmartPointer<vtkFrameAnimationPlayer>::New();
+  this->AxesActor       = vtkSmartPointer<vtkAxesActor>::New();
+  this->AxesWidget      = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+
 
   this->Annotation->SetMaximumLineHeight( 0.07 );
   this->Annotation->SetText( 2, "<slice_and_max>" );
   this->Annotation->SetText( 3, "<window>\n<level>" );
+
+  this->AxesWidget->SetOrientationMarker( this->AxesActor );
+
   // setting the max font size and linear font scale factor
   // forces vtkCustomCornerAnnotation to keep its constituent text mappers'
   // font sizes the same, otherwise, when the location and value
@@ -142,6 +150,7 @@ vtkMedicalImageViewer::vtkMedicalImageViewer()
   this->Cursor = 1;
   this->Annotate = 1;
   this->Interpolate = 0;
+  this->AxesDisplay = 1;
 
   this->MaxFrameRate = 60;
   this->FrameRate = 25;
@@ -170,6 +179,7 @@ vtkMedicalImageViewer::vtkMedicalImageViewer()
 
   this->SetMappingToLuminance();
 
+  this->MaintainLastView = 0;
   // loop over slice orientations
   double p[3] = { 1.0, -1.0, 1.0 };
 
@@ -408,6 +418,7 @@ void vtkMedicalImageViewer::InstallPipeline()
   
   this->InstallAnnotation();
   this->InstallCursor();
+  this->InstallAxes();
 
   if( this->Renderer && this->GetInput() )
   {
@@ -424,6 +435,7 @@ void vtkMedicalImageViewer::UnInstallPipeline()
 {
   this->UnInstallCursor();
   this->UnInstallAnnotation();
+  this->UnInstallAxes();
 
   if( this->InteractorStyle && !this->WindowLevelCallbackTags.empty() )
   {
@@ -520,6 +532,8 @@ void vtkMedicalImageViewer::InitializeWindowLevel()
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void vtkMedicalImageViewer::InitializeCameraViews()
 {
+  if( this->MaintainLastView ) return;
+
   vtkImageData* input = this->GetInput();
   if( !input ) return;
 
@@ -996,6 +1010,28 @@ void vtkMedicalImageViewer::UnInstallCursor()
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void vtkMedicalImageViewer::InstallAxes()
+{
+  if( this->Interactor && this->Renderer && this->GetInput() )
+  {
+    this->AxesWidget->SetDefaultRenderer( this->Renderer );
+    this->AxesWidget->SetInteractor( this->Interactor );
+    this->AxesWidget->SetViewport( 0.8, 0.0, 1.0, 0.2 );
+    this->AxesWidget->On();
+    this->AxesWidget->InteractiveOff();
+  }
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void vtkMedicalImageViewer::UnInstallAxes()
+{
+  if( this->AxesWidget->GetEnabled() )
+  {
+    this->AxesWidget->Off();
+  }
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void vtkMedicalImageViewer::SetCursor( const int& arg )
 {
   if( this->Cursor == arg )
@@ -1034,6 +1070,19 @@ void vtkMedicalImageViewer::SetAnnotate( const int& arg )
     this->InstallAnnotation();
   else 
     this->UnInstallAnnotation();
+
+  if( this->GetInput() ) this->Render();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void vtkMedicalImageViewer::SetAxesDisplay( const int& arg )
+{
+  this->AxesDisplay = arg;
+
+  if( this->AxesDisplay ) 
+    this->InstallAxes();
+  else 
+    this->UnInstallAxes();
 
   if( this->GetInput() ) this->Render();
 }
