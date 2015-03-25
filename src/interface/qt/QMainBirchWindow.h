@@ -38,7 +38,9 @@ public:
   void updateInterface();
   void buildHistogram();
   void buildLabels();
+  void buildViewControls();
   void configureSharpenInterface();
+  void configureViewTools();
 
 public slots:
   // action event functions
@@ -49,7 +51,17 @@ public slots:
   void onMapped(QWidget*);
   void sharpenImage();
   void reloadImage();
-  
+
+  void interpolateViewToggle();
+  void axesViewToggle();
+  void invertViewWindowLevel();
+  void setViewToXAxis();
+  void setViewToYAxis();
+  void setViewToZAxis();
+  void flipViewVertical();
+  void flipViewHorizontal();
+  void rotateViewClockwise();
+  void rotateViewCounterClockwise();
 
 protected:
   // called whenever the main window is closed

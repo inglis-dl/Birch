@@ -7,6 +7,14 @@
         <file>Icons/framePlay.png</file>
         <file>Icons/framePlayReverse.png</file>
         <file>Icons/frameToFirst.png</file>
-        <file>Icons/frameToLast.png</file>
+        <file>Icons/linear_interpolation_on.png</file>
+        <file>Icons/rotate_ccw_on.png</file>
+        <file>Icons/rotate_cw_on.png</file>
+        <file>Icons/invert.png</file>
+        <file>Icons/flip_v_on.png</file>
+        <file>Icons/flip_h_on.png</file>
+        <file>Icons/xy_plane.png</file>
+        <file>Icons/yz_plane.png</file>
+        <file>Icons/xz_plane.png</file>
     </qresource>
 </RCC>

@@ -13,17 +13,26 @@
 
 #include "vtkCamera.h"
 #include "vtkCommand.h"
-#include "vtkMath.h"
-#include "vtkPNGWriter.h"
-#include "vtkSmartPointer.h"
-#include "vtkWindowToImageFilter.h"
-#include "vtkSmartPointer.h"
+#include "vtkChartXY.h"
+#include "vtkContextScene.h"
+#include "vtkContextView.h"
+#include "vtkDataArrayCollection.h"
 #include "vtkGDCMImageReader.h"
-#include "vtkRenderWindow.h"
-#include "vtkRenderer.h"
-#include "vtkRenderWindowInteractor.h"
-#include "vtkMedicalImageViewer.h"
+#include "vtkIdTypeArray.h"
+#include "vtkImageHistogram.h"
 #include "vtkImageSharpen.h"
+#include "vtkIntArray.h"
+#include "vtkMath.h"
+#include "vtkMedicalImageViewer.h"
+#include "vtkPNGWriter.h"
+#include "vtkPlot.h"
+#include "vtkPointData.h"
+#include "vtkRenderer.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkSmartPointer.h"
+#include "vtkTable.h"
+#include "vtkWindowToImageFilter.h"
 
 #include "vtkEventQtSlotConnect.h"
 
@@ -40,17 +49,6 @@
 #include <QWidgetItem>
 
 #include "vtkBirchDoubleSlider.h"
-
-#include "vtkImageHistogram.h"
-#include "vtkIdTypeArray.h"
-#include "vtkIntArray.h"
-#include "vtkDataArrayCollection.h"
-#include "vtkPointData.h"
-#include "vtkChartXY.h"
-#include "vtkPlot.h"
-#include "vtkTable.h"
-#include "vtkContextView.h"
-#include "vtkContextScene.h"
 
 #define VTK_CREATE(type, name) \
   vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
@@ -156,6 +154,7 @@ QMainBirchWindow::QMainBirchWindow( QWidget* parent )
   this->setCorner( Qt::BottomRightCorner, Qt::RightDockWidgetArea );
 
   this->buildSharpenInterface();
+  this->buildViewControls();
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -321,6 +320,7 @@ void QMainBirchWindow::updateInterface()
   this->buildLabels();
   this->ui->dicomTagWidget->updateTableWidget( this->currentFile.toStdString() );
   this->configureSharpenInterface();
+  this->configureViewTools();
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -514,6 +514,92 @@ void QMainBirchWindow::configureSharpenInterface()
     if( item->widget() )
       item->widget()->setEnabled( enable );
   }
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::configureViewTools()
+{
+  bool enable = 3 == this->Viewer->GetImageDimensionality(); 
+  
+  this->ui->viewXToolButton->setEnabled( enable );
+  this->ui->viewYToolButton->setEnabled( enable );
+  this->ui->viewZToolButton->setEnabled( enable );
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::buildViewControls()
+{
+  connect( this->ui->invertWLToolButton, SIGNAL( clicked() ), this, SLOT( invertViewWindowLevel() ) );
+  connect( this->ui->viewXToolButton, SIGNAL( clicked() ), this, SLOT( setViewToXAxis() ) );
+  connect( this->ui->viewYToolButton, SIGNAL( clicked() ), this, SLOT( setViewToYAxis() ) );
+  connect( this->ui->viewZToolButton, SIGNAL( clicked() ), this, SLOT( setViewToZAxis() ) );
+  connect( this->ui->flipVToolButton, SIGNAL( clicked() ), this, SLOT( flipViewVertical() ) );
+  connect( this->ui->flipHToolButton, SIGNAL( clicked() ), this, SLOT( flipViewHorizontal() ) );
+  connect( this->ui->spinCWToolButton, SIGNAL( clicked() ), this, SLOT( rotateViewClockwise() ) );
+  connect( this->ui->spinCCWToolButton, SIGNAL( clicked() ), this, SLOT( rotateViewCounterClockwise() ) );
+  connect( this->ui->interpolateToggleToolButton, SIGNAL( clicked() ), this, SLOT( interpolateViewToggle() ) );
+  connect( this->ui->axesToggleToolButton, SIGNAL( clicked() ), this, SLOT( axesViewToggle() ) );
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::invertViewWindowLevel()
+{
+  this->Viewer->InvertWindowLevel();  
+  this->buildHistogram();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::setViewToXAxis()
+{
+  this->Viewer->SetViewOrientationToYZ();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::setViewToYAxis()
+{
+  this->Viewer->SetViewOrientationToXZ();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::setViewToZAxis()
+{
+  this->Viewer->SetViewOrientationToXY();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::flipViewVertical()
+{
+  this->Viewer->FlipCameraVertical();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::flipViewHorizontal()
+{
+  this->Viewer->FlipCameraHorizontal();
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::rotateViewClockwise()
+{
+  this->Viewer->RotateCamera( -90.0 );
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::rotateViewCounterClockwise()
+{
+  this->Viewer->RotateCamera( 90.0 );
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::interpolateViewToggle()
+{
+  this->Viewer->SetInterpolate( this->ui->interpolateToggleToolButton->isChecked() );
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::axesViewToggle()
+{
+  this->Viewer->SetAxesDisplay( this->ui->axesToggleToolButton->isChecked() );
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
