@@ -8,7 +8,7 @@
 
 =========================================================================*/
 
-/** 
+/**
  * @class vtkMedicalImageViewer
  *
  * @author Patrick Emond <emondpd AT mcmaster DOT ca>
@@ -16,9 +16,9 @@
  *
  * @brief Display a 2D image.
  *
- * vtkMedicalImageViewer is a convenience class for 
- * displaying a 2D image.  It packages up the functionality found in 
- * vtkRenderWindow, vtkRenderer, vtkImageActor and 
+ * vtkMedicalImageViewer is a convenience class for
+ * displaying a 2D image.  It packages up the functionality found in
+ * vtkRenderWindow, vtkRenderer, vtkImageActor and
  * vtkImageWindowLevel into a single easy to use
  * class.  This class also creates an image interactor style
  * (vtkCustomInteractorStyleImage) that allows zooming and panning of images, and
@@ -75,7 +75,7 @@ class vtkAnimationScene;
 class vtkAnimationCue;
 class vtkFrameAnimationPlayer;
 
-class vtkMedicalImageViewer : public vtkObject 
+class vtkMedicalImageViewer : public vtkObject
 {
 public:
   static vtkMedicalImageViewer *New();
@@ -84,13 +84,13 @@ public:
 
   /**
    * Force render the display.
-   * In some situations, a pipeline update will not cause a 
+   * In some situations, a pipeline update will not cause a
    * refresh render.  This method allows for forcing a render.
    */
   virtual void Render();
-  
+ 
   //@{
-  /** 
+  /**
    * Set/Get the input image to the viewer.
    * @param input vtkImageData from the output of a reader
    */
@@ -99,8 +99,14 @@ public:
   //@}
 
   /**
+   * Get the input image to the vtkImageActor.
+   * The input is the vtkImageWindowLevel filter output.
+   */
+  virtual vtkImageData* GetDisplayInput();
+
+  /**
    * Load an image from file and display.
-   * 
+   *
    * If fileName is valid, load the file via vtkGDCMImageReader and display it.
    * Returns fails if image fails to load.
    * @param fileName Name of a file on disk
@@ -128,6 +134,24 @@ public:
     { this->SetViewOrientation(vtkMedicalImageViewer::VIEW_ORIENTATION_YZ); };
   virtual void SetViewOrientationToXZ()
     { this->SetViewOrientation(vtkMedicalImageViewer::VIEW_ORIENTATION_XZ); };
+  //@}
+
+  //@{
+  /**
+   * Rotate the camera. */
+  void RotateCamera( const double& );
+  //@}
+ 
+  //@{
+  /**
+   * Flip the camera horizontally. */
+  void FlipCameraHorizontal();
+  //@}
+
+  //@{
+  /**
+   * Flip the camera horizontally. */
+  void FlipCameraVertical();
   //@}
 
   //@{
@@ -160,21 +184,21 @@ public:
    * extent is reset properly.
    */
   virtual void UpdateDisplayExtent();
-  
+ 
   /**
-   * Get the minimum slice index. 
+   * Get the minimum slice index.
    * @sa GetSliceMax(), GetSliceRange()
    */
   virtual int GetSliceMin();
 
   /**
-   * Get the maximum slice index. 
+   * Get the maximum slice index.
    * @sa GetSliceMin(), GetSliceRange()
    */
   virtual int GetSliceMax();
 
   /**
-   * Get the number of slices. 
+   * Get the number of slices.
    * @sa GetSliceMin(), GetSliceRange()
    */
   virtual int GetNumberOfSlices()
@@ -187,7 +211,7 @@ public:
    */
   virtual void GetSliceRange( int range[2] )
     { this->GetSliceRange(range[0], range[1]); }
-    
+   
   /**
    * Return the minimum and maximum slice index values.
    * @param min fill the minimum slice by reference
@@ -232,7 +256,7 @@ public:
   void SetMappingToColorAlpha();
   void SetMappingToColor();
   //@}
-  
+ 
   /**
    * Get window.
    * @sa Level, SetColorWindowLevel()
@@ -242,7 +266,7 @@ public:
 
   /**
    * Get level.
-   * @sa Window, SetColorWindowLevel() 
+   * @sa Window, SetColorWindowLevel()
    * @return current level
    */
   double GetColorLevel() { return this->Level; }
@@ -282,6 +306,7 @@ public:
   void DoStartWindowLevel();
   void DoResetWindowLevel();
   void DoWindowLevel();
+  void InvertWindowLevel();
   //@}
 
   /**
@@ -360,7 +385,7 @@ public:
   /**
    * Turns interpolation on or off for both the cursor widget
    * and the image actor simultaneously.  Off state sets the
-   * cursor widget to use discrete cursoring mode: the cursor 
+   * cursor widget to use discrete cursoring mode: the cursor
    * snaps to pixel centers and reads off discrete pixel values,
    * and the image actor show pixels with nearest neighbor interpolation.
    * On state sets the cursor widget to use continous cursoring
@@ -382,6 +407,11 @@ public:
    */
   void SetFrameRate( const int& );
   vtkGetMacro( FrameRate, int );
+
+  /**
+   * Save the current slice view to file
+   */
+   void WriteSlice( const std::string& );
 
 protected:
   vtkMedicalImageViewer();
@@ -425,15 +455,15 @@ protected:
   int LastSlice[3]; /**< Keeps track of last slice when changing orientation */
 
   /** Maintain window level settings between image changes */
-  int MaintainLastWindowLevel; 
+  int MaintainLastWindowLevel;
   double OriginalWindow; /**< Original window computed from input */
   double OriginalLevel;  /**< Original level computed from input */
-  double InitialWindow;  /**< Initial window at start of interaction */   
+  double InitialWindow;  /**< Initial window at start of interaction */  
   double InitialLevel;   /**< Initial level at start of interaction */
   double Window;         /**< Current window */
   double Level;          /**< Current level */
 
-  /** 
+  /**
    * Callback ids for install and uninstall of callbacks to the interactor.
    * Callback tags are set in InstallPipeline() and used for callback
    * removal in UnInstallPipeline()
@@ -446,7 +476,7 @@ protected:
   void InitializeWindowLevel();
 
   /** Maintain view settings between image changes */
-  int MaintainLastView; 
+  int MaintainLastView;
   int ViewOrientation;              /**< Current view orientation: XY, XZ, YZ */
   double CameraPosition[3][3];      /**< Current camera position */
   double CameraFocalPoint[3][3];    /**< Current camera focal point */
@@ -455,6 +485,8 @@ protected:
 
   /** Set up the default camera parameters based on input data dimensions etc. */
   void InitializeCameraViews();
+  /** Update the camera from recorded parameters according to the current view orientation */
+  void UpdateCameraView();
 
   /** Animation control */
   vtkSmartPointer<vtkAnimationScene> AnimationScene;
