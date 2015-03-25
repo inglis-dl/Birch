@@ -58,7 +58,7 @@ public:
   // Description:
   // Before trying to do anything with the named file, check if it is in fact
   // writable by this object.
-  bool IsValidFileName( const char* );
+  static bool IsValidFileName( const char* );
 
   // Description:
   // When writing, see if the scalar range will allow fitting within a smaller number
