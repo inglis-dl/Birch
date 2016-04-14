@@ -102,6 +102,10 @@ QMainBirchWindow::QMainBirchWindow( QWidget* parent )
     this->ui->actionOpen, SIGNAL( triggered() ),
     this, SLOT( slotOpen() ) );
 
+  QObject::connect(
+    this->ui->actionSave, SIGNAL( triggered() ),
+    this, SLOT( slotSave() ) );
+
   for (int i = 0; i < MaxRecentFiles; ++i) 
   {
     this->recentFileActs[i] = new QAction(this);
@@ -232,7 +236,7 @@ void QMainBirchWindow::slotOpen()
   // this addresses a known and unfixable problem with native dialogs in KDE
   dialog.setOption( QFileDialog::DontUseNativeDialog );
 
-  dialog.setNameFilter( tr( "Images (*.dcm *.png *.jpg *.jpeg *.tif *.tiff *.gif *.mhd);;All files(*.*)" ) );
+  dialog.setNameFilter( tr( "Images (*.dcm *.png *.jpg *.jpeg *.tif *.tiff *.gif *.mhd *.vti);;All files(*.*)" ) );
   dialog.setFileMode( QFileDialog::ExistingFile );
   dialog.setModal( true );
   
@@ -242,6 +246,25 @@ void QMainBirchWindow::slotOpen()
     if( fileNames.isEmpty() ) return;
     QString fileName = fileNames.first();
     this->loadFile( fileName );
+  }
+}
+
+//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QMainBirchWindow::slotSave()
+{
+  QString fileName = QFileDialog::getSaveFileName( this,
+    QDialog::tr("Save Image to File"), "",
+    QDialog::tr("Images (*.png *.pnm *.bmp *.jpg *.jpeg *.tif *.tiff)"));
+
+  if( fileName.isEmpty() ) 
+  {
+    std::cout << "no file name found" << std::endl;
+    return;
+  }
+  else
+  {
+    std::cout << fileName.toStdString().c_str() << std::endl;
+    this->Viewer->WriteSlice( fileName.toStdString() );
   }
 }
 

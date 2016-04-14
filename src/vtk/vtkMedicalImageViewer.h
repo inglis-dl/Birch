@@ -59,6 +59,7 @@
 #include "vtkSmartPointer.h"
 #include <vector>
 
+class vtkAxes;
 class vtkAxesActor;
 class vtkCustomCornerAnnotation;
 class vtkCustomInteractorStyleImage;
@@ -67,6 +68,9 @@ class vtkImageCoordinateWidget;
 class vtkImageData;
 class vtkImageWindowLevel;
 class vtkOrientationMarkerWidget;
+class vtkPolyDataMapper;
+class vtkPropAssembly;
+class vtkOutlineCornerSource;
 class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
@@ -383,6 +387,13 @@ public:
   vtkGetMacro( AxesDisplay, int );
 
   /**
+   * Turn bounding box and origin axes on or off in the render window.
+   */
+  void SetBoxDisplay( const int& );
+  vtkBooleanMacro( BoxDisplay, const int& );
+  vtkGetMacro( BoxDisplay, int );
+
+  /**
    * Turns interpolation on or off for both the cursor widget
    * and the image actor simultaneously.  Off state sets the
    * cursor widget to use discrete cursoring mode: the cursor
@@ -430,6 +441,8 @@ protected:
   void UnInstallAnnotation();
   void InstallAxes();
   void UnInstallAxes();
+  void InstallBox();
+  void UnInstallBox();
   //@}
 
   //@{
@@ -444,12 +457,17 @@ protected:
   vtkSmartPointer<vtkCustomCornerAnnotation> Annotation;
   vtkSmartPointer<vtkAxesActor> AxesActor;
   vtkSmartPointer<vtkOrientationMarkerWidget> AxesWidget;
+  vtkSmartPointer<vtkPropAssembly> BoxActor;
+  vtkSmartPointer<vtkAxes> BoxAxes;
+  vtkSmartPointer<vtkOutlineCornerSource> BoxOutline;
+  vtkSmartPointer<vtkPolyDataMapper> BoxMapper;
   //@}
 
   int Cursor;
   int Annotate;
   int Interpolate;
   int AxesDisplay;
+  int BoxDisplay;
 
   int Slice;        /**< Current slice index */
   int LastSlice[3]; /**< Keeps track of last slice when changing orientation */

@@ -45,6 +45,7 @@ public:
 public slots:
   // action event functions
   virtual void slotOpen();
+  virtual void slotSave();
   void openRecentFile();
   void initialize();
   void processEvents();
@@ -81,6 +82,7 @@ private:
   QString strippedName(const QString &fullFileName);
   void setCurrentFile(const QString &fileName);
   void loadFile(const QString &fileName);
+  void saveFile(const QString &fileName);
   void buildSharpenInterface();
 
   QString currentFile;

@@ -94,7 +94,7 @@
          </property>
          <property name="icon">
           <iconset resource="widgets/Resources/vtkBirchQWidgets.qrc">
-           <normaloff>:/Icons/flip_v_on.png</normaloff>:/Icons/flip_v_on.png</iconset>
+           <normaloff>:/Icons/flipVicon2.png</normaloff>:/Icons/flipVicon2.png</iconset>
          </property>
         </widget>
        </item>
@@ -111,7 +111,7 @@
          </property>
          <property name="icon">
           <iconset resource="widgets/Resources/vtkBirchQWidgets.qrc">
-           <normaloff>:/Icons/flip_h_on.png</normaloff>:/Icons/flip_h_on.png</iconset>
+           <normaloff>:/Icons/flipHicon2.png</normaloff>:/Icons/flipHicon2.png</iconset>
          </property>
         </widget>
        </item>
@@ -122,7 +122,7 @@
          </property>
          <property name="icon">
           <iconset resource="widgets/Resources/vtkBirchQWidgets.qrc">
-           <normaloff>:/Icons/rotate_cw_on.png</normaloff>:/Icons/rotate_cw_on.png</iconset>
+           <normaloff>:/Icons/cwicon.png</normaloff>:/Icons/cwicon.png</iconset>
          </property>
         </widget>
        </item>
@@ -133,7 +133,7 @@
          </property>
          <property name="icon">
           <iconset resource="widgets/Resources/vtkBirchQWidgets.qrc">
-           <normaloff>:/Icons/rotate_ccw_on.png</normaloff>:/Icons/rotate_ccw_on.png</iconset>
+           <normaloff>:/Icons/ccwicon.png</normaloff>:/Icons/ccwicon.png</iconset>
          </property>
         </widget>
        </item>
@@ -144,7 +144,7 @@
          </property>
          <property name="icon">
           <iconset resource="widgets/Resources/vtkBirchQWidgets.qrc">
-           <normaloff>:/Icons/invert.png</normaloff>:/Icons/invert.png</iconset>
+           <normaloff>:/Icons/invert2.png</normaloff>:/Icons/invert2.png</iconset>
          </property>
         </widget>
        </item>
@@ -260,6 +260,7 @@
     </property>
     <addaction name="actionOpen"/>
     <addaction name="actionExit"/>
+    <addaction name="actionSave"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -974,8 +975,7 @@
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff/>
-    </iconset>
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Open</string>
@@ -984,11 +984,19 @@
   <action name="actionExit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff/>
-    </iconset>
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Exit</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset theme="document-save">
+     <normaloff>../../../../../../.designer/backup</normaloff>../../../../../../.designer/backup</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
    </property>
   </action>
  </widget>

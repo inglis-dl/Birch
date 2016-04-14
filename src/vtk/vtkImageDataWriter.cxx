@@ -70,7 +70,7 @@ vtkImageDataWriter::~vtkImageDataWriter()
 //----------------------------------------------------------------------------
 bool vtkImageDataWriter::IsValidFileName( const char* fileName )
 {
-  if( fileName == NULL || !Birch::Utilities::fileExists( fileName ) )
+  if( NULL == fileName )
   {
     return false;
   }
