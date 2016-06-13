@@ -14,6 +14,8 @@
 =========================================================================*/
 #include "vtkImageSharpen.h"
 
+// VTK includes
+#include "vtkDataArray.h"
 #include "vtkImageCast.h"
 #include "vtkImageData.h"
 #include "vtkImageGaussianSmooth.h"
@@ -27,6 +29,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+// C++ includes
 #include <map>
 
 vtkStandardNewMacro(vtkImageSharpen);
@@ -80,9 +83,7 @@ int vtkImageSharpen::RequestData(
       vtkErrorMacro("Float or double scalar type not supported");
       return 1;  
     }
-  output->SetNumberOfScalarComponents( 1 );
-  output->SetScalarType( type );
-  output->AllocateScalars();
+  output->AllocateScalars( type, 1 );
 
   this->SimpleExecute(input, output);
 
@@ -125,7 +126,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    //
    vtkNew<vtkImageCast> caster;
    caster->SetOutputScalarTypeToFloat();
-   caster->SetInput(input);
+   caster->SetInputData(input);
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 1 / 10
@@ -163,8 +164,8 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    //
    vtkNew<vtkImageMathematics> m1;
    m1->SetOperationToSubtract();
-   m1->SetInput1( smooth1.GetPointer() );
-   m1->SetInput2( smoother2->GetOutput() );
+   m1->SetInput1Data( smooth1.GetPointer() );
+   m1->SetInput2Data( smoother2->GetOutput() );
    m1->Update();
 
    currentProgress = progressCount++/progressGoal;
@@ -175,7 +176,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    vtkNew<vtkImageMathematics> m2;
    m2->SetOperationToMultiplyByK();
    m2->SetConstantK( weight );
-   m2->SetInput1( m1->GetOutput() );
+   m2->SetInput1Data( m1->GetOutput() );
    m2->Update();
 
    currentProgress = progressCount++/progressGoal;
@@ -186,8 +187,8 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    vtkNew<vtkImageMathematics> m3;
    m3->SetOperationToAdd();
-   m3->SetInput1( m2->GetOutput() );
-   m3->SetInput2( orig.GetPointer() );
+   m3->SetInput1Data( m2->GetOutput() );
+   m3->SetInput2Data( orig.GetPointer() );
    m3->Update();
 
    currentProgress = progressCount++/progressGoal;

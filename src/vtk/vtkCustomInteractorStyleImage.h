@@ -1,17 +1,15 @@
 /*=========================================================================
 
   Module:    vtkCustomInteractorStyleImage.h
-  Program:   Alder (A simple image viewer)
+  Program:   Birch
   Language:  C++
-  Author:    Patrick Emond <emondpd AT mcmaster DOT ca>
   Author:    Dean Inglis <inglisd AT mcmaster DOT ca>
 
 =========================================================================*/
 
 /**
- * @class vtkCustomInteractorStyleImage 
+ * @class vtkCustomInteractorStyleImage
  *
- * @author Patrick Emond <emondpd AT mcmaster DOT ca>
  * @author Dean Inglis <inglisd AT mcmaster DOT ca>
  *
  * @brief  Interactive manipulation of the camera specialized for images.
@@ -22,28 +20,31 @@
 #ifndef __vtkCustomInteractorStyleImage_h
 #define __vtkCustomInteractorStyleImage_h
 
-#include "vtkInteractorStyleImage.h"
+// VTK includes
+#include <vtkInteractorStyleImage.h>
 
 class vtkCustomInteractorStyleImage : public vtkInteractorStyleImage
 {
-public:
-  static vtkCustomInteractorStyleImage *New();
-  vtkTypeMacro(vtkCustomInteractorStyleImage, vtkInteractorStyleImage);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  public:
+    static vtkCustomInteractorStyleImage* New();
+    vtkTypeMacro(vtkCustomInteractorStyleImage, vtkInteractorStyleImage);
+    void PrintSelf(ostream& os, vtkIndent indent);
 
-  /**
-   * Method overridden from parent class to fix a bug with passing
-   * window level events.
-   */
-  virtual void WindowLevel();
+    /**
+     * Method overridden from parent class to fix a bug with passing
+     * window level events.
+     */
+    virtual void WindowLevel();
 
-protected:
-  vtkCustomInteractorStyleImage(){};
-  ~vtkCustomInteractorStyleImage(){};
+    virtual void OnChar();
 
-private:
-  vtkCustomInteractorStyleImage(const vtkCustomInteractorStyleImage&); /** Not implemented. */
-  void operator=(const vtkCustomInteractorStyleImage&); /** Not implemented. */
+  protected:
+    vtkCustomInteractorStyleImage() {}
+    ~vtkCustomInteractorStyleImage() {}
+
+  private:
+    vtkCustomInteractorStyleImage(const vtkCustomInteractorStyleImage&);  /** Not implemented. */
+    void operator=(const vtkCustomInteractorStyleImage&);  /** Not implemented. */
 };
 
 #endif
