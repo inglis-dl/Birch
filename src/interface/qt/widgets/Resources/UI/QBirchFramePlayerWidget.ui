@@ -29,8 +29,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/frameToFirst.png</normaloff>:/icons/frameToFirst.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/frameToFirst.png</normaloff>:/Icons/frameToFirst.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -52,8 +52,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/frameBack.png</normaloff>:/icons/frameBack.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/frameBack.png</normaloff>:/Icons/frameBack.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -78,9 +78,8 @@
       <string>PlayBack</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/framePlayReverse.png</normaloff>
-       <normalon>:/icons/pause.png</normalon>:/icons/framePlayReverse.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/framePlayReverse.png</normaloff>:/Icons/framePlayReverse.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -105,9 +104,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/framePlay.png</normaloff>
-       <normalon>:/icons/pause.png</normalon>:/icons/framePlay.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/framePlay.png</normaloff>:/Icons/framePlay.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -132,8 +130,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/frameForward.png</normaloff>:/icons/frameForward.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/frameForward.png</normaloff>:/Icons/frameForward.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -158,8 +156,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/frameToLast.png</normaloff>:/icons/frameToLast.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/frameToLast.png</normaloff>:/Icons/frameToLast.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -178,8 +176,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/repeat.png</normaloff>:/icons/repeat.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/repeat.png</normaloff>:/Icons/repeat.png</iconset>
      </property>
      <property name="iconSize">
       <size>

@@ -54,6 +54,9 @@ class QBirchMainWindowPrivate : public QObject, public Ui_QBirchMainWindow
     void onMapped(QWidget*);
     void sharpenImage();
     void reloadImage();
+    void showProgress(vtkObject*, unsigned long, void*, void* call_data);
+    void hideProgress();
+    void updateProgress(vtkObject*, unsigned long, void*, void* call_data);
 
   protected:
     QStringList fileHistory;

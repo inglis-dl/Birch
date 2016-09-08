@@ -1231,7 +1231,11 @@ bool QBirchSliceView::load(
     if (forward)
     {
       reader->GetReader()->AddObserver(
+        vtkCommand::StartEvent, forward);
+      reader->GetReader()->AddObserver(
         vtkCommand::ProgressEvent, forward);
+      reader->GetReader()->AddObserver(
+        vtkCommand::EndEvent, forward);
     }
     vtkImageData* image = reader->GetOutput();
     if (image)

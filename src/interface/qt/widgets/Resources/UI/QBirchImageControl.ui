@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>268</width>
+    <width>485</width>
     <height>38</height>
    </rect>
   </property>
@@ -34,6 +34,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>view along x axis</string>
      </property>
@@ -41,8 +53,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/yz_plane.png</normaloff>:/icons/yz_plane.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/yz_plane.png</normaloff>:/Icons/yz_plane.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -57,6 +69,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>view along y axis</string>
      </property>
@@ -64,8 +88,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/xz_plane.png</normaloff>:/icons/xz_plane.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/xz_plane.png</normaloff>:/Icons/xz_plane.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -80,6 +104,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>view along z axis</string>
      </property>
@@ -87,8 +123,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/xy_plane.png</normaloff>:/icons/xy_plane.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/xy_plane.png</normaloff>:/Icons/xy_plane.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -103,6 +139,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>flip image vertically</string>
      </property>
@@ -110,8 +158,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/flipVicon.png</normaloff>:/icons/flipVicon.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/flipVicon.png</normaloff>:/Icons/flipVicon.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -126,6 +174,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>flip image horizontally</string>
      </property>
@@ -133,8 +193,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/flipHicon.png</normaloff>:/icons/flipHicon.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/flipHicon.png</normaloff>:/Icons/flipHicon.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -149,6 +209,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>rotate clockwise 90 degrees</string>
      </property>
@@ -156,8 +228,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/cwicon.png</normaloff>:/icons/cwicon.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/cwicon.png</normaloff>:/Icons/cwicon.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -172,6 +244,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>rotate counter clockwise 90 degrees</string>
      </property>
@@ -179,8 +263,14 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/ccwicon.png</normaloff>:/icons/ccwicon.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/ccwicon.png</normaloff>:/Icons/ccwicon.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>24</width>
+       <height>24</height>
+      </size>
      </property>
     </widget>
    </item>
@@ -189,6 +279,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>linear / nearest neighbor interpolation </string>
      </property>
@@ -196,8 +298,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/linearicon.png</normaloff>:/icons/linearicon.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/linearicon.png</normaloff>:/Icons/linearicon.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -215,6 +317,18 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>invert window level</string>
      </property>
@@ -222,8 +336,8 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>:/icons/inverticon.png</normaloff>:/icons/inverticon.png</iconset>
+      <iconset resource="../QBirchWidgets.qrc">
+       <normaloff>:/Icons/inverticon.png</normaloff>:/Icons/inverticon.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -238,11 +352,29 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>select background color</string>
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>24</width>
+       <height>24</height>
+      </size>
      </property>
     </widget>
    </item>
@@ -251,11 +383,29 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>select foreground color</string>
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>24</width>
+       <height>24</height>
+      </size>
      </property>
     </widget>
    </item>
@@ -264,11 +414,29 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>30</width>
+       <height>30</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>select annotation color</string>
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>24</width>
+       <height>24</height>
+      </size>
      </property>
     </widget>
    </item>

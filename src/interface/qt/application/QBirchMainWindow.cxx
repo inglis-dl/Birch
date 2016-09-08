@@ -21,6 +21,7 @@
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
 #include <vtkDataArrayCollection.h>
+#include <vtkEventForwarderCommand.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkGDCMImageReader.h>
 #include <vtkIdTypeArray.h>
@@ -52,26 +53,6 @@
 #include <QString>
 #include <QWidgetItem>
 
-class vtkSharpenProgressCallback : public vtkCommand
-{
-  public:
-    static vtkSharpenProgressCallback *New() {
-     return new vtkSharpenProgressCallback; }
-
-    void Execute( vtkObject* caller, unsigned long vtkNotUsed(event),
-                  void * callData )
-    {
-      vtkImageSharpen* self = vtkImageSharpen::SafeDownCast(caller);
-      double* progress = (double*)callData;
-      progressBar->setValue( (int)((*progress) * 100) );
-      QApplication::processEvents();
-    }
-
-  vtkSharpenProgressCallback(){}
-  ~vtkSharpenProgressCallback(){}
-  QProgressBar* progressBar;
-};
-
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 //
 // QBirchMainWindowPrivate methods
@@ -90,14 +71,59 @@ QBirchMainWindowPrivate::~QBirchMainWindowPrivate()
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchMainWindowPrivate::showProgress(
+  vtkObject*, unsigned long, void*, void* call_data)
+{
+  QProgressBar* progress = this->statusbar->findChild<QProgressBar*>();
+  if (progress)
+  {
+    progress->setVisible(true);
+    progress->setValue(0);
+  }
+  QPushButton* button = this->statusbar->findChild<QPushButton*>();
+  if (button)
+    button->setVisible(true);
+  QString message = reinterpret_cast<const char*>(call_data);
+  if (!message.isEmpty())
+    this->statusbar->showMessage(message);
+
+  this->statusbar->repaint();
+  QApplication::processEvents();
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchMainWindowPrivate::hideProgress()
+{
+  QProgressBar* progress = this->statusbar->findChild<QProgressBar*>();
+  if (progress)
+  {
+    progress->setVisible(false);
+    this->statusbar->clearMessage();
+  }
+  QPushButton* button = this->statusbar->findChild<QPushButton*>();
+  if (button)
+    button->setVisible(false);
+  this->statusbar->clearMessage();
+  this->statusbar->repaint();
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchMainWindowPrivate::updateProgress(
+  vtkObject*, unsigned long, void*, void* call_data)
+{
+  QProgressBar* progress = this->statusbar->findChild<QProgressBar*>();
+  double value = *(reinterpret_cast<double*>(call_data));
+  progress->setValue(static_cast<int>(100*value));
+  QApplication::processEvents();
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchMainWindowPrivate::setupUi(QMainWindow* window)
 {
   Q_Q(QBirchMainWindow);
 
   this->Ui_QBirchMainWindow::setupUi(window);
 
-  QMenu* menu;
-  
   // connect the file menu items
   // connect the Open item to open a DICOM image
   connect(this->actionOpen, SIGNAL(triggered()),
@@ -123,24 +149,17 @@ void QBirchMainWindowPrivate::setupUi(QMainWindow* window)
 
   vtkRenderWindow* renwin =
     this->imageHistogramView->GetRenderWindow();
-
   vtkNew<vtkRenderer> ren;
   ren->SetBackground(1, 1, 1);
   renwin->AddRenderer(ren.GetPointer());
+
   // Set up a 2D scene, add an XY chart to it
   this->ContextView = vtkSmartPointer<vtkContextView>::New();
-  
   this->ContextView->SetRenderWindow(renwin);
   vtkNew<vtkChartXY> chart;
   this->ContextView->GetScene()->AddItem(chart.GetPointer());
 
   this->imageWidget->reset();
-
-/*
-  this->Connections = vtkSmartPointer<vtkEventQtSlotConnect>::New();
-  this->Connections->Connect(this->Viewer->GetRenderWindow()->GetInteractor(),
-    vtkCommand::MouseMoveEvent, this, SLOT(processEvents()) );
-*/ 
   this->setCurrentFile( "" );
 
   q->setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
@@ -154,13 +173,17 @@ void QBirchMainWindowPrivate::setupUi(QMainWindow* window)
   this->stddevSlider->setMaximum(10.0);
 
   this->signalMapper = new QSignalMapper(this);
-  connect(this->radiusSlider, SIGNAL(valueChanged(double)), signalMapper, SLOT(map()));
+  connect(this->radiusSlider, SIGNAL(valueChanged(double)),
+    signalMapper, SLOT(map()));
   this->signalMapper->setMapping( this->radiusSlider, this->radiusLabel);
-  connect(this->weightSlider, SIGNAL(valueChanged(int)), signalMapper, SLOT(map()));
+  connect(this->weightSlider, SIGNAL(valueChanged(int)),
+    signalMapper, SLOT(map()));
   this->signalMapper->setMapping( this->weightSlider, this->weightLabel);
-  connect(this->stddevSlider, SIGNAL(valueChanged(double)), signalMapper, SLOT(map()));
+  connect(this->stddevSlider, SIGNAL(valueChanged(double)),
+    signalMapper, SLOT(map()));
   this->signalMapper->setMapping( this->stddevSlider, this->stddevLabel);
-  connect(this->signalMapper, SIGNAL(mapped(QWidget*)), this, SLOT(onMapped(QWidget*)));
+  connect(this->signalMapper, SIGNAL(mapped(QWidget*)),
+    this, SLOT(onMapped(QWidget*)));
 
   this->radiusSlider->setValue(this->radiusSlider->singleStep());
   this->weightSlider->setValue(this->weightSlider->singleStep());
@@ -176,13 +199,20 @@ void QBirchMainWindowPrivate::setupUi(QMainWindow* window)
   {
     this->loadFile(args.last());
   }
+
+  QProgressBar* progress = new QProgressBar();
+  this->statusbar->addPermanentWidget(progress);
+  progress->setVisible(false);
+  QPushButton* button = new QPushButton("Abort");
+  this->statusbar->addPermanentWidget(button);
+  button->setVisible(false);
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchMainWindowPrivate::onMapped(QWidget* widget)
 {
   QObject* mappedWidget = this->signalMapper->mapping( widget );
-  QLabel *label  = qobject_cast<QLabel*>( widget );
+  QLabel* label = qobject_cast<QLabel*>( widget );
   if( label && mappedWidget )
   {
     QString str = label->objectName();
@@ -192,16 +222,16 @@ void QBirchMainWindowPrivate::onMapped(QWidget* widget)
     QString title = str.toLower();
     title[0] = str[0].toUpper();
     title.append(": ");
-    if( mappedWidget->metaObject()->className() == QString("QSlider") )
+    QString widgetName = mappedWidget->metaObject()->className();         
+    if( widgetName == QString("QSlider") )
     {
       QSlider* slider = qobject_cast<QSlider*>( mappedWidget );  
       title.append(QString::number(slider->value()));
     }  
-    else if( mappedWidget->metaObject()->className() == QString("QBirchDoubleSlider") )
+    else if( widgetName == QString("QBirchDoubleSlider") )
     {
       QBirchDoubleSlider* slider = qobject_cast<QBirchDoubleSlider*>( mappedWidget );  
       title.append(QString::number(slider->value()));
-
       double radius = this->radiusSlider->value();
       double stddev = this->stddevSlider->value();
       QString kernelVal = QString::number( 2 * static_cast<int>( stddev*radius ) + 1 );
@@ -211,7 +241,6 @@ void QBirchMainWindowPrivate::onMapped(QWidget* widget)
       kernelStr.append( kernelVal );
       this->kernelSizeLabel->setText( kernelStr );
     }  
-    
     label->setText( title );
   }
 }
@@ -224,11 +253,9 @@ void QBirchMainWindowPrivate::slotOpen()
 
   // this addresses a known and unfixable problem with native dialogs in KDE
   dialog.setOption( QFileDialog::DontUseNativeDialog );
-
   dialog.setNameFilter( tr( "Images (*.dcm *.png *.jpg *.jpeg *.tif *.tiff *.gif *.mhd *.vti);;All files(*.*)" ) );
   dialog.setFileMode( QFileDialog::ExistingFile );
   dialog.setModal( true );
-  
   if( dialog.exec() )
   {
     QStringList fileNames = dialog.selectedFiles();
@@ -260,10 +287,19 @@ void QBirchMainWindowPrivate::slotSave()
 void QBirchMainWindowPrivate::loadFile(const QString& fileName)
 {
   Q_Q(QBirchMainWindow);
+  bool success = true;
   try
   {
-    this->imageWidget->load(fileName);
-    this->setCurrentFile(fileName);
+    vtkNew<vtkEventForwarderCommand> forward;
+    vtkNew<vtkObject> dummy;
+    forward->SetTarget(dummy.GetPointer());
+    this->qvtkConnection->Connect(dummy.GetPointer(), vtkCommand::StartEvent,
+      this, SLOT(showProgress(vtkObject*, unsigned long, void*, void*)));
+    this->qvtkConnection->Connect(dummy.GetPointer(), vtkCommand::EndEvent,
+      this, SLOT(hideProgress()));
+    this->qvtkConnection->Connect(dummy.GetPointer(), vtkCommand::ProgressEvent,
+      this, SLOT(updateProgress(vtkObject*, unsigned long, void*, void*)));
+    this->imageWidget->load(fileName, forward.GetPointer());
   }
   catch(std::exception& e)
   {
@@ -273,7 +309,10 @@ void QBirchMainWindowPrivate::loadFile(const QString& fileName)
     errorMessage.setText("There was an error while attempting to open the image.");
     errorMessage.exec();
     this->imageWidget->reset();
+    success = false;
   }
+  if(success)
+    this->setCurrentFile(fileName);
   this->updateUi();
 }
 
@@ -318,7 +357,7 @@ void QBirchMainWindowPrivate::openRecentFile()
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-QString QBirchMainWindowPrivate::strippedName(const QString &fullFileName)
+QString QBirchMainWindowPrivate::strippedName(const QString& fullFileName)
 {
   return QFileInfo(fullFileName).fileName();
 }
@@ -373,7 +412,7 @@ void QBirchMainWindowPrivate::buildLabels()
   double range[2];
   double min = image->GetScalarTypeMax();
   double max = image->GetScalarTypeMin();
-  for(int i = 0; i < n; i++)
+  for(int i = 0; i < n; ++i)
   {
     image->GetPointData()->GetScalars()->GetRange(range,i);
     min = min < range[0] ? min : range[0];
@@ -407,7 +446,7 @@ void QBirchMainWindowPrivate::buildHistogram()
   double min = image->GetScalarTypeMax();
   double max = image->GetScalarTypeMin();
 
-  for(int i = 0; i < nc; i++)
+  for(int i = 0; i < nc; ++i)
   {
     image->GetPointData()->GetScalars()->GetRange(range,i);
     min = min < range[0] ? min : range[0];
@@ -423,13 +462,11 @@ void QBirchMainWindowPrivate::buildHistogram()
   histogram->AutomaticBinningOff();
 
   vtkNew<vtkDataArrayCollection> channels;
-  for(int i = 0; i < nc; i++)
+  for(int i = 0; i < nc; ++i)
   { 
     histogram->SetActiveComponent(i);
     histogram->Update();
-    
     vtkNew<vtkIdTypeArray> channel;
-
     channel->DeepCopy(histogram->GetHistogram());
     channel->SetName(vtkVariant(i).ToString());
     channels->AddItem(channel.GetPointer());
@@ -444,8 +481,7 @@ void QBirchMainWindowPrivate::buildHistogram()
   table->AddColumn(xvalues.GetPointer());
  
   int start = static_cast<int>(histogram->GetBinOrigin());
-
-  for (int i = 0; i < table->GetNumberOfRows(); i++)
+  for (int i = 0; i < table->GetNumberOfRows(); ++i)
   {
     table->SetValue(i,0,start+i);     
   }
@@ -460,7 +496,7 @@ void QBirchMainWindowPrivate::buildHistogram()
   unsigned char b[3] = {0,0,255};
 
   for( channels->InitTraversal(it);
-      (dataArray = vtkIdTypeArray::SafeDownCast(channels->GetNextItemAsObject(it)));i++)
+      (dataArray = vtkIdTypeArray::SafeDownCast(channels->GetNextItemAsObject(it))); ++i)
   {
     table->AddColumn(dataArray);
     line = chart->AddPlot(vtkChart::LINE);
@@ -486,11 +522,14 @@ void QBirchMainWindowPrivate::sharpenImage()
   sharpen->SetStandardDeviation( stddev );
   sharpen->SetInputData( image );
 
-  vtkNew<vtkSharpenProgressCallback> cbk;
-  cbk->progressBar = this->sharpenProgressBar;
-  sharpen->AddObserver(vtkCommand::ProgressEvent, cbk.GetPointer());
-  sharpen->Update();
+  this->qvtkConnection->Connect(sharpen.GetPointer(), vtkCommand::StartEvent,
+    this, SLOT(showProgress(vtkObject*, unsigned long, void*, void*)));
+  this->qvtkConnection->Connect(sharpen.GetPointer(), vtkCommand::EndEvent,
+    this, SLOT(hideProgress()));
+  this->qvtkConnection->Connect(sharpen.GetPointer(), vtkCommand::ProgressEvent,
+    this, SLOT(updateProgress(vtkObject*, unsigned long, void*, void*)));
 
+  sharpen->Update();
   this->imageWidget->setImageData(sharpen->GetOutput());
   this->updateUi();
 }
@@ -498,16 +537,19 @@ void QBirchMainWindowPrivate::sharpenImage()
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchMainWindowPrivate::reloadImage()
 {
-  this->imageWidget->load(this->currentFile);
-  this->updateUi();
+  this->loadFile(this->currentFile);
 }
 
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchMainWindowPrivate::configureSharpenInterface()
 {
-  bool enable = 2 == this->imageWidget->sliceView()->dimensionality(); 
+  vtkImageData* image = this->imageWidget->imageData();
+  bool enable = 2 == this->imageWidget->sliceView()->dimensionality() && 
+                image && 1 == image->GetNumberOfScalarComponents() &&
+                VTK_FLOAT != image->GetScalarType() &&
+                VTK_DOUBLE != image->GetScalarType(); 
   QLayoutItem* child;
-  for (int i = 0; i < this->sharpenGridLayout->count(); i++ )
+  for (int i = 0; i < this->sharpenGridLayout->count(); ++i )
   {
     QLayoutItem* const item = this->sharpenGridLayout->itemAt( i );
     if( item->widget() )

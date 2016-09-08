@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Program:   
+  Program:
   Module:    vtkImageSharpen.cxx
   Language:  C++
 
@@ -64,27 +64,26 @@ int vtkImageSharpen::RequestData(
       inExt[3] < inExt[2] ||
       inExt[5] < inExt[4])
     {
-    return 1;
+    return 0;
     }
 
   int nc = input->GetNumberOfScalarComponents();
-  if( nc != 1 )
+  if( 1 != nc )
     {
       vtkErrorMacro("Single component image input required");
-      return 1;
-    } 
+      return 0;
+    }
 
   // Set the extent of the output and allocate memory.
   output->SetExtent(
     outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()));
-  int type = output->GetScalarType();
+  int type = input->GetScalarType();
   if( type == VTK_FLOAT || type == VTK_DOUBLE )
     {
       vtkErrorMacro("Float or double scalar type not supported");
-      return 1;  
+      return 0;
     }
   output->AllocateScalars( type, 1 );
-
   this->SimpleExecute(input, output);
 
   return 1;
@@ -95,7 +94,7 @@ int vtkImageSharpen::RequestData(
 // that the output data type is the same as the input data type.
 //-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 template <class IT>
-void vtkImageSharpenExecute(vtkImageSharpen* self, 
+void vtkImageSharpenExecute(vtkImageSharpen* self,
                             vtkImageData* input,
                             vtkImageData* output,
                             IT* inPtr,
@@ -110,7 +109,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
      output->DeepCopy( input );
      return;
    }
- 
+
    double progressGoal = 10.;
    int    progressCount = 0;
    double currentProgress = 0.;
@@ -130,6 +129,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 1 / 10
+   if(self->AbortExecute){ return; }
 
    stddev = stddev < 0. ? fabs(stddev) : stddev;
    radius = radius < 0. ? fabs(radius) : radius;
@@ -144,6 +144,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 2 / 10
+   if(self->AbortExecute){ return; }
 
    // smooth the smoothed input with a gaussian kernel
    //
@@ -156,6 +157,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 3 / 10
+   if(self->AbortExecute){ return; }
 
    vtkNew<vtkImageData> smooth1;
    smooth1->DeepCopy( smoother->GetOutput() );
@@ -170,6 +172,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 4 / 10
+   if(self->AbortExecute){ return; }
 
    // add the scaled difference of gaussians to the input
    //
@@ -181,6 +184,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 5 / 10
+   if(self->AbortExecute){ return; }
 
    vtkNew<vtkImageData> orig;
    orig->DeepCopy( caster->GetOutput() );
@@ -193,6 +197,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 6 / 10
+   if(self->AbortExecute){ return; }
 
    double range = m3->GetOutput()->GetScalarRange()[1] -
                   m3->GetOutput()->GetScalarRange()[0];
@@ -220,6 +225,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 7 / 10
+   if(self->AbortExecute){ return; }
 
    // perform histogram matching
    // compute input and output normalized histograms
@@ -235,13 +241,16 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    double delta = max - min + 1;
    int percent_done =  0;
-   
-   for( int i = min; i <= max; i++ )
+
+   for( int i = min; i <= max; ++i )
    {
      histo_source.insert( std::pair<int, unsigned long int>(i, 0L) );
-     percent_done = (int)( i * 100.0 / delta);
+     percent_done = static_cast<int>( i * 100.0 / delta);
      if( 0 == percent_done % 10 )
+     {
        self->UpdateProgress(  i * deltaProgress / delta );
+       if(self->AbortExecute){ return; }
+     }  
    }
    histo_target.insert( histo_source.begin(), histo_source.end() );
 
@@ -252,15 +261,18 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    int size = indata->GetNumberOfTuples();
    delta = size;
    percent_done = 0;
-   for( int i = 0; i < size; i++ )
+   for( int i = 0; i < size; ++i )
    {
      sit = histo_source.find(static_cast<int>( indata->GetTuple1(i) ));
      if(sit != histo_source.end()) sit->second++;
      oit = histo_target.find(static_cast<int>( outdata->GetTuple1(i) ));
      if(oit != histo_target.end()) oit->second++;
-     percent_done = (int)( i * 100.0 / delta);
+     percent_done = static_cast<int>( i * 100.0 / delta);
      if( 0 == percent_done % 10 )
+     {
        self->UpdateProgress(  i * deltaProgress / delta + currentProgress );
+       if(self->AbortExecute){ return; }
+     }  
    }
 
    self->UpdateProgress( currentProgress ); // 8 / 10
@@ -271,8 +283,8 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
    unsigned long sum2 = 0L;
    std::map<int, unsigned long int> cdf_source;
    std::map<int, unsigned long int> cdf_target;
-   sit = histo_source.begin(); 
-   oit = histo_target.begin(); 
+   sit = histo_source.begin();
+   oit = histo_target.begin();
    while( sit != histo_source.end() &&  oit != histo_target.end() )
    {
       sum1 += sit->second;
@@ -285,10 +297,11 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
 
    currentProgress = progressCount++/progressGoal;
    self->UpdateProgress( currentProgress ); // 9 / 10
+   if(self->AbortExecute){ return; }
 
    // perform histogram matching on output image
    //
-   for( int i = 0; i < size; i++ )
+   for( int i = 0; i < size; ++i )
    {
      int value = static_cast<int>( outdata->GetTuple1( i ) );
      oit = cdf_target.find( value );
@@ -303,7 +316,7 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
          {
            sit++;
          }
-       } 
+       }
        */
        if( sit != cdf_source.end() && sit->first != value )
        {
@@ -312,8 +325,11 @@ void vtkImageSharpenExecute(vtkImageSharpen* self,
      }
      percent_done = (int)( i * 100.0 / delta);
      if( 0 == percent_done % 10 )
+     {
        self->UpdateProgress(  i * deltaProgress / delta + currentProgress );
-   }
+       if(self->AbortExecute){ return; }
+     }  
+    }
 
    self->UpdateProgress( 1.0 );
 }
@@ -331,10 +347,10 @@ void vtkImageSharpen::SimpleExecute(vtkImageData* input,
     // data types VTK supports.
     vtkTemplateMacro(
       vtkImageSharpenExecute(this,
-                             input, 
+                             input,
                              output,
-                             static_cast<VTK_TT *>(inPtr), 
-                             static_cast<VTK_TT *>(outPtr), 
+                             static_cast<VTK_TT *>(inPtr),
+                             static_cast<VTK_TT *>(outPtr),
                              this->StandardDeviation,
                              this->Radius,
                              this->Weight));

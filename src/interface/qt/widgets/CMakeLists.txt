@@ -9,6 +9,7 @@ SET( BirchQtWidgetsLib_SRC
   QBirchImageWidget.cxx
   QBirchSliceView.cxx
   QBirchSliderWidget.cxx
+  QBirchVTKOutputWindow.cxx
 )
 
 SET( BIRCH_WIDGET_UI_DIR

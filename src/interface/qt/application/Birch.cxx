@@ -16,6 +16,7 @@
 // Birch includes
 #include <QBirchApplication.h>
 #include <QBirchMainWindow.h>
+#include <QBirchVTKOutputWindow.h>
 #include <Utilities.h>
 
 // Qt includes
@@ -35,6 +36,7 @@ int main( int argc, char** argv )
   try
   {
     // create the user interface
+    QBirchVTKOutputWindow::Install();
     QBirchApplication qapp(argc, argv);
     QBirchMainWindow mainWindow;
 
