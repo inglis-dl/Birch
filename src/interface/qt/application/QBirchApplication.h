@@ -17,9 +17,9 @@ class Ui_QBirchApplication;
 
 class QBirchApplication : public QApplication
 {
-public:
-  QBirchApplication(int& argc, char** argv) : QApplication(argc, argv) {}
-  bool notify(QObject* pObject, QEvent* pEvent);
+  public:
+    QBirchApplication(int& argc, char** argv) : QApplication(argc, argv) {}
+    bool notify(QObject* pObject, QEvent* pEvent);
 };
 
 #endif

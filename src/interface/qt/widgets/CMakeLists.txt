@@ -46,9 +46,9 @@ INCLUDE_DIRECTORIES(
 )
 
 # Wrap QT files
-QT4_WRAP_UI(       BirchQtWidgetsLib_UI  ${BirchQtWidgets_Uis} )
-QT4_WRAP_CPP(      BirchQtWidgetsLib_MOC ${BirchQtWidgets_MocHeaders} )
-QT4_ADD_RESOURCES( BirchQtWidgetsLib_QRC ${BirchQtWidgets_Resources} )
+QT5_WRAP_UI(       BirchQtWidgetsLib_UI  ${BirchQtWidgets_Uis} )
+QT5_WRAP_CPP(      BirchQtWidgetsLib_MOC ${BirchQtWidgets_MocHeaders} )
+QT5_ADD_RESOURCES( BirchQtWidgetsLib_QRC ${BirchQtWidgets_Resources} )
 
 ADD_LIBRARY( BirchQtWidgets
   ${BirchQtWidgetsLib_SRC}

@@ -40,14 +40,11 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =========================================================================*/
 #include <QBirchVTKOutputWindow.h>
+#include <vtkObjectFactory.h>
 
 // Qt includes
 #include <QtGlobal>
-
-QBirchVTKOutputWindow *QBirchVTKOutputWindow::New()
-{
-  return new QBirchVTKOutputWindow;
-}
+vtkStandardNewMacro(QBirchVTKOutputWindow);
 
 QBirchVTKOutputWindow::QBirchVTKOutputWindow()
 {
@@ -63,7 +60,7 @@ void QBirchVTKOutputWindow::Initialize()
 
 void QBirchVTKOutputWindow::Install()
 {
-  QBirchVTKOutputWindow *win = QBirchVTKOutputWindow::New();
+  QBirchVTKOutputWindow* win = QBirchVTKOutputWindow::New();
   vtkOutputWindow::SetInstance(win);
   win->Delete();
 }
@@ -72,11 +69,11 @@ void QBirchVTKOutputWindow::DisplayText(const char* text)
 {
   if (text)
     {
-#if QT_VERSION >= 0x050000    
+#if QT_VERSION >= 0x050000
     qInfo("%s", text);
 #else
     qWarning("%s", text);
-#endif   
+#endif
     }
 }
 

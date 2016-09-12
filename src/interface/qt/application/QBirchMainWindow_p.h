@@ -41,17 +41,17 @@ class QBirchMainWindowPrivate : public QObject, public Ui_QBirchMainWindow
 
     void setupUi(QMainWindow* window);
     void updateUi();
-  
+
     void buildHistogram();
     void buildLabels();
     void configureSharpenInterface();
- 
+
   public slots:
     // action event functions
     virtual void slotOpen();
     virtual void slotSave();
     void openRecentFile();
-    void onMapped(QWidget*);
+    void onMapped(QWidget* widget);
     void sharpenImage();
     void reloadImage();
     void showProgress(vtkObject*, unsigned long, void*, void* call_data);

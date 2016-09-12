@@ -31,7 +31,6 @@ namespace Birch
   class Common
   {
   public:
-
     enum CustomEvents
     {
       ImageChangedEvent = vtkCommand::UserEvent + 100,
@@ -43,6 +42,6 @@ namespace Birch
     Common() {}
     ~Common() {}
   };
-}
+}  // namespace Birch
 
-#endif // __Common_h
+#endif  // __Common_h
