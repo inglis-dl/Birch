@@ -4,6 +4,7 @@ SET( BirchQtWidgetsLib_SRC
   QBirchAbstractView.cxx
   QBirchDicomTagWidget.cxx
   QBirchDoubleSlider.cxx
+  QBirchDoubleSpinBox.cxx
   QBirchFramePlayerWidget.cxx
   QBirchImageControl.cxx
   QBirchImageWidget.cxx
@@ -28,6 +29,8 @@ SET( BirchQtWidgets_MocHeaders
   QBirchAbstractView_p.h
   QBirchDicomTagWidget.h
   QBirchDoubleSlider.h
+  QBirchDoubleSpinBox.h
+  QBirchDoubleSpinBox_p.h
   QBirchFramePlayerWidget.h
   QBirchImageControl.h
   QBirchImageWidget.h
@@ -46,9 +49,9 @@ INCLUDE_DIRECTORIES(
 )
 
 # Wrap QT files
-QT4_WRAP_UI(       BirchQtWidgetsLib_UI  ${BirchQtWidgets_Uis} )
-QT4_WRAP_CPP(      BirchQtWidgetsLib_MOC ${BirchQtWidgets_MocHeaders} )
-QT4_ADD_RESOURCES( BirchQtWidgetsLib_QRC ${BirchQtWidgets_Resources} )
+QT5_WRAP_UI(       BirchQtWidgetsLib_UI  ${BirchQtWidgets_Uis} )
+QT5_WRAP_CPP(      BirchQtWidgetsLib_MOC ${BirchQtWidgets_MocHeaders} )
+QT5_ADD_RESOURCES( BirchQtWidgetsLib_QRC ${BirchQtWidgets_Resources} )
 
 ADD_LIBRARY( BirchQtWidgets
   ${BirchQtWidgetsLib_SRC}

@@ -1,10 +1,5 @@
 /*=========================================================================
 
-  Module:    QBirchSliderWidget.h
-  Program:   Birch
-  Language:  C++
-  Author:    Dean Inglis <inglisd AT mcmaster DOT ca>
-
   Library:   CTK
 
   Copyright (c) Kitware Inc.
@@ -23,35 +18,30 @@
 
 =========================================================================*/
 
-/**
- * @class QBirchSliderWidget
- *
- * @author Dean Inglis <inglisd AT mcmaster DOT ca>
- *
- * @brief A wrapper around a QBirchDoubleSlider and a QDoubleSpinBox.
- *
- * QBirchSliderWidget is a wrapper around a QBirchDoubleSlider and a QDoubleSpinBox
- * where the slider value and the spinbox value are synchronized.
- *
- * This class was adapted from the CTK library and is required for use in
- * the QBirchFramePlayerWidget.
- *
- * @see QBirchDoubleSlider, QSpinBox, QBirchFramePlayerWidget
- */
 #ifndef __QBirchSliderWidget_h
 #define __QBirchSliderWidget_h
 
 // Qt includes
 #include <QSlider>
 
-class QDoubleSpinBox;
 class QBirchDoubleSlider;
 class QBirchSliderWidgetPrivate;
+class QBirchDoubleSpinBox;
 
+/// \ingroup Widgets
+///
+/// QBirchSliderWidget is a wrapper around a QBirchDoubleSlider and a QBirchDoubleSpinBox
+/// where the slider value and the spinbox value are synchronized.
+/// \sa QDoubleSpinBox
 class QBirchSliderWidget : public QWidget
 {
   Q_OBJECT
-  Q_PROPERTY(int decimals READ decimals WRITE setDecimals)
+  Q_FLAGS(SynchronizeSiblings)
+
+  /// This property holds the precision of the spin box, in decimals.
+  /// 2 by default.
+  /// \sa decimals(), setDecimals(), decimalsChanged()
+  Q_PROPERTY(int decimals READ decimals WRITE setDecimals NOTIFY decimalsChanged)
   Q_PROPERTY(double singleStep READ singleStep WRITE setSingleStep)
   Q_PROPERTY(double pageStep READ pageStep WRITE setPageStep)
   Q_PROPERTY(double minimum READ minimum WRITE setMinimum)
@@ -60,211 +50,230 @@ class QBirchSliderWidget : public QWidget
   Q_PROPERTY(QString prefix READ prefix WRITE setPrefix)
   Q_PROPERTY(QString suffix READ suffix WRITE setSuffix)
   Q_PROPERTY(double tickInterval READ tickInterval WRITE setTickInterval)
-  Q_PROPERTY(bool autoSpinBoxWidth READ isAutoSpinBoxWidth
-    WRITE setAutoSpinBoxWidth)
-  Q_PROPERTY(Qt::Alignment spinBoxAlignment READ spinBoxAlignment
-    WRITE setSpinBoxAlignment)
+  Q_PROPERTY(QSlider::TickPosition tickPosition READ tickPosition WRITE setTickPosition)
+  Q_PROPERTY(SynchronizeSiblings synchronizeSiblings READ synchronizeSiblings WRITE setSynchronizeSiblings)
+  Q_PROPERTY(Qt::Alignment spinBoxAlignment READ spinBoxAlignment WRITE setSpinBoxAlignment)
   Q_PROPERTY(bool tracking READ hasTracking WRITE setTracking)
-  Q_PROPERTY(bool spinBoxVisible READ isSpinBoxVisible
-    WRITE setSpinBoxVisible);
+  Q_PROPERTY(bool spinBoxVisible READ isSpinBoxVisible WRITE setSpinBoxVisible);
+  Q_PROPERTY(bool invertedAppearance READ invertedAppearance WRITE setInvertedAppearance)
+  Q_PROPERTY(bool invertedControls READ invertedControls WRITE setInvertedControls)
 
-  public:
-    /** Superclass typedef */
-    typedef QWidget Superclass;
+public:
 
-    /** Constructors */
-    explicit QBirchSliderWidget(QWidget* parent = 0);
-    virtual ~QBirchSliderWidget();
+  /// Synchronize properties of the slider siblings:
+  /// NoSynchronize:
+  /// The slider widget siblings aren't updated and this widget does not update
+  /// from its siblings.
+  /// SynchronizeWidth:
+  /// The width of the SpinBox is set to the same width of the largest QDoubleSpinBox
+  /// of its QBirchSliderWidget siblings.
+  /// SynchronizeDecimals:
+  /// Whenever one of the siblings changes its number of decimals, all its
+  /// siblings Synchronize to the new number of decimals.
+  ///
+  /// Default is SynchronizeWidth.
+  /// \sa SynchronizeSiblings(), setSynchronizeSiblings(), decimalsChanged()
+  enum SynchronizeSibling
+    {
+    NoSynchronize = 0x000,
+    SynchronizeWidth = 0x001,
+    SynchronizeDecimals = 0x002,
+    };
+  Q_DECLARE_FLAGS(SynchronizeSiblings, SynchronizeSibling)
 
-    //@{
-    /**
-     * This property holds the sliders and spinbox minimum value.
-     * FIXME: Test following specs.
-     * When setting this property, the maximum is adjusted if necessary
-     * to ensure that the range remains valid.
-     * Also the slider's current value is adjusted to be within the new range.
-     */
-    double minimum() const;
-    void setMinimum(double minimum);
-    //@}
+  /// Superclass typedef
+  typedef QWidget Superclass;
 
-    //@{
-    /**
-     * This property holds the sliders and spinbox minimum value.
-     * FIXME: Test following specs.
-     * When setting this property, the maximum is adjusted if necessary
-     * to ensure that the range remains valid.
-     * Also the slider's current value is adjusted to be within the new range.
-     */
-    double maximum() const;
-    void setMaximum(double maximum);
-    //@}
+  /// Constructors
+  explicit QBirchSliderWidget(QWidget* parent = 0);
+  virtual ~QBirchSliderWidget();
 
-    /** Utility function that set the min/max in once */
-    void setRange(double min, double max);
+  ///
+  /// This property holds the sliders and spinbox minimum value.
+  /// FIXME: Test following specs.
+  /// When setting this property, the maximum is adjusted if necessary
+  /// to ensure that the range remains valid.
+  /// Also the slider's current value is adjusted to be within the new range.
+  virtual double minimum()const;
+  virtual void setMinimum(double minimum);
 
-    /**
-     * This property holds the slider and spinbox current value.
-     * QBirchSliderWidget forces the value to be within the
-     * legal range: minimum <= value <= maximum.
-     */
-    double value() const;
+  ///
+  /// This property holds the sliders and spinbox minimum value.
+  /// FIXME: Test following specs.
+  /// When setting this property, the maximum is adjusted if necessary
+  /// to ensure that the range remains valid.
+  /// Also the slider's current value is adjusted to be within the new range.
+  virtual double maximum()const;
+  virtual void setMaximum(double maximum);
+  /// Description
+  /// Utility function that set the min/max in once
+  virtual void setRange(double min, double max);
 
-    //@{
-    /**
-     * This property holds the single step.
-     * The smaller of two natural steps that the
-     * slider provides and typically corresponds to the
-     * user pressing an arrow key.
-     */
-    double singleStep() const;
-    void setSingleStep(double step);
-    //@}
+  ///
+  /// This property holds the slider and spinbox current value.
+  /// QBirchSliderWidget forces the value to be within the
+  /// legal range: minimum <= value <= maximum.
+  virtual double value()const;
 
-    //@{
-    /**
-     * This property holds the page step.
-     * The larger of two natural steps that an abstract slider provides and
-     * typically corresponds to the user pressing PageUp or PageDown.
-     */
-    double pageStep() const;
-    void setPageStep(double step);
-    //@}
+  ///
+  /// This property holds the single step.
+  /// The smaller of two natural steps that the
+  /// slider provides and typically corresponds to the
+  /// user pressing an arrow key.
+  virtual double singleStep()const;
+  virtual void setSingleStep(double step);
 
-    //@{
-    /**
-     * This property holds the precision of the spin box, in decimals.
-     * Sets how many decimals the spinbox will use for displaying and interpreting doubles.
-     */
-    int decimals() const;
-    void setDecimals(int decimals);
-    //@}
+  ///
+  /// This property holds the page step.
+  /// The larger of two natural steps that an abstract slider provides and
+  /// typically corresponds to the user pressing PageUp or PageDown.
+  virtual double pageStep()const;
+  virtual void setPageStep(double step);
 
-    //@{
-    /**
-     * This property holds the spin box's prefix.
-     * The prefix is prepended to the start of the displayed value.
-     * Typical use is to display a unit of measurement or a currency symbol
-     */
-    QString prefix() const;
-    void setPrefix(const QString& prefix);
-    //@}
+  ///
+  /// Return the decimals property value.
+  /// \sa decimals, setDecimals(), decimalsChanged()
+  virtual int decimals()const;
 
-    //@{
-    /**
-     * This property holds the spin box's suffix.
-     * The suffix is appended to the end of the displayed value.
-     * Typical use is to display a unit of measurement or a currency symbol
-     */
-    QString suffix() const;
-    void setSuffix(const QString& suffix);
-    //@}
+  ///
+  /// This property holds the spin box's prefix.
+  /// The prefix is prepended to the start of the displayed value.
+  /// Typical use is to display a unit of measurement or a currency symbol
+  virtual QString prefix()const;
+  virtual void setPrefix(const QString& prefix);
 
-    //@{
-    /**
-     * This property holds the interval between tickmarks.
-     * This is a value interval, not a pixel interval.
-     * If it is 0, the slider will choose between lineStep() and pageStep().
-     * The default value is 0.
-     */
-    double tickInterval() const;
-    void setTickInterval(double ti);
-    //@}
+  ///
+  /// This property holds the spin box's suffix.
+  /// The suffix is appended to the end of the displayed value.
+  /// Typical use is to display a unit of measurement or a currency symbol
+  virtual QString suffix()const;
+  virtual void setSuffix(const QString& suffix);
 
-    //@{
-    /**
-     * This property holds the alignment of the spin box.
-     * Possible Values are Qt::AlignLeft, Qt::AlignRight, and Qt::AlignHCenter.
-     * By default, the alignment is Qt::AlignLeft
-     */
-    void setSpinBoxAlignment(Qt::Alignment alignment);
-    Qt::Alignment spinBoxAlignment() const;
-    //@}
+  ///
+  /// This property holds the interval between tickmarks.
+  /// This is a value interval, not a pixel interval.
+  /// If it is 0, the slider will choose between lineStep() and pageStep().
+  /// The default value is 0.
+  virtual double tickInterval()const;
+  virtual void setTickInterval(double tick);
 
-    //@{
-    /**
-     * This property holds whether slider tracking is enabled.
-     * If tracking is enabled (the default), the widget emits the valueChanged()
-     * signal while the slider or spinbox is being dragged. If tracking is
-     * disabled, the widget emits the valueChanged() signal only when the user
-     * releases the slider or spinbox.
-     */
-    void setTracking(bool enable);
-    bool hasTracking() const;
-    //@}
+  ///
+  /// This property holds the tickmark position for the slider.
+  /// The valid values are described by the QSlider::TickPosition enum.
+  /// The default value is QSlider::NoTicks.
+  virtual void setTickPosition(QSlider::TickPosition position);
+  virtual QSlider::TickPosition tickPosition()const;
 
-    //@{
-    /**
-     * Set/Get the auto spinbox width
-     * When the autoSpinBoxWidth property is on, the width of the SpinBox is
-     * set to the same width of the largest QSpinBox of its
-     * QBirchSliderWidget siblings.
-     */
-    bool isAutoSpinBoxWidth() const;
-    void setAutoSpinBoxWidth(bool autoWidth);
-    //@}
+  ///
+  /// This property holds the alignment of the spin box.
+  /// Possible Values are Qt::AlignLeft, Qt::AlignRight, and Qt::AlignHCenter.
+  /// By default, the alignment is Qt::AlignLeft
+  virtual void setSpinBoxAlignment(Qt::Alignment alignment);
+  virtual Qt::Alignment spinBoxAlignment()const;
 
-    /**
-     * The Spinbox visibility can be controlled using setSpinBoxVisible() and
-     * isSpinBoxVisible().
-     */
-    bool isSpinBoxVisible() const;
+  ///
+  /// This property holds whether slider tracking is enabled.
+  /// If tracking is enabled (the default), the widget emits the valueChanged()
+  /// signal while the slider or spinbox is being dragged. If tracking is
+  /// disabled, the widget emits the valueChanged() signal only when the user
+  /// releases the slider or spinbox.
+  virtual void setTracking(bool enable);
+  virtual bool hasTracking()const;
 
-    /**
-     * Returns the spinbox synchronized with the slider. Be careful
-     * with what you do with the spinbox as the slider might change
-     * properties automatically.
-     */
-    QDoubleSpinBox* spinBox();
+  ///
+  /// Set/Get the synchronize siblings mode. This helps when having multiple
+  /// QBirchSliderWidget stacked upon each other.
+  /// Default flag is SynchronizeWidth | SynchronizeDecimals.
+  /// \sa SynchronizeSiblingsModes
+  virtual QBirchSliderWidget::SynchronizeSiblings synchronizeSiblings() const;
+  virtual void setSynchronizeSiblings(QBirchSliderWidget::SynchronizeSiblings options);
 
-    /**
-     * Returns the slider synchronized with the spinbox. Be careful
-     * with what you do with the slider as the spinbox might change
-     * properties automatically.
-     */
-    QBirchDoubleSlider* slider();
+  /// This property holds whether or not a slider shows its values inverted.
+  /// If this property is false (the default), the minimum and maximum will
+  /// be shown in its classic position for the inherited widget. If the value
+  /// is true, the minimum and maximum appear at their opposite location.
+  /// Note: This property makes most sense for sliders and dials. For scroll
+  /// bars, the visual effect of the scroll bar subcontrols depends on whether
+  /// or not the styles understand inverted appearance; most styles ignore this
+  /// property for scroll bars.
+  /// \sa invertedControls
+  virtual void setInvertedAppearance(bool invertedAppearance);
+  virtual bool invertedAppearance()const;
 
-  public Q_SLOTS:
-    /**
-     * Reset the slider and spinbox to zero (value and position)
-     */
-    void reset();
-    void setValue(double value);
-    void setSpinBoxVisible(bool visible);
+  /// This property holds whether or not the slider and the spinbox invert
+  /// their wheel and key events.
+  /// If this property is false, scrolling the mouse wheel "up" and using keys
+  /// like page up will increase the value of the slider widget towards its
+  /// maximum. Otherwise, pressing page up will move value towards the minimum.
+  /// The default value of the property is false.
+  /// \sa invertedAppearance
+  virtual void setInvertedControls(bool invertedControls);
+  virtual bool invertedControls()const;
 
-  Q_SIGNALS:
-    /**
-     * When tracking is on (default), valueChanged is emitted when the
-     * user drags the slider.
-     * If tracking is off, valueChanged() is emitted only when the user
-     * releases the mouse.
-     * @see valueIsChanging QAbstractSlider::valueChanged
-     */
-    void valueChanged(double value);
+  ///
+  /// The Spinbox visibility can be controlled using setSpinBoxVisible() and
+  /// isSpinBoxVisible().
+  virtual bool isSpinBoxVisible()const;
+  ///
+  /// Returns the spinbox synchronized with the slider. Be careful
+  /// with what you do with the spinbox as the slider might change
+  /// properties automatically.
+  virtual QBirchDoubleSpinBox* spinBox();
 
-    /**
-     * valueIsChanging() is emitted whenever the slider is dragged and tracking
-     * is turned off. You might want to use valueChanged instead.
-     * It behaves the same way than QAbstractSlider::sliderMoved()
-     * @see valueChanged QAbstractSlider::sliderMoved
-     */
-    void valueIsChanging(double value);
+  ///
+  /// Returns the slider synchronized with the spinbox. Be careful
+  /// with what you do with the slider as the spinbox might change
+  /// properties automatically.
+  virtual QBirchDoubleSlider* slider();
 
-  protected Q_SLOTS:
+public Q_SLOTS:
+  ///
+  /// Reset the slider and spinbox to zero (value and position)
+  virtual void reset();
+  virtual void setValue(double value);
+  virtual void setSpinBoxVisible(bool);
 
-    void startChanging();
-    void stopChanging();
-    void changeValue(double value);
+  /// Sets how many decimals the spinbox uses for displaying and
+  /// interpreting doubles.
+  virtual void setDecimals(int decimals);
 
-  protected:
-    virtual bool eventFilter(QObject* obj, QEvent* event);
+Q_SIGNALS:
+  /// When tracking is on (default), valueChanged is emitted when the
+  /// user drags the slider.
+  /// If tracking is off, valueChanged() is emitted only when the user
+  /// releases the mouse.
+  /// \sa valueIsChanging QAbstractSlider::valueChanged
+  void valueChanged(double value);
 
-  protected:
-    QScopedPointer<QBirchSliderWidgetPrivate> d_ptr;
+  /// valueIsChanging() is emitted whenever the slider is dragged and tracking
+  /// is turned off. You might want to use valueChanged instead.
+  /// It behaves the same way than QAbstractSlider::sliderMoved()
+  /// \sa valueChanged QAbstractSlider::sliderMoved
+  void valueIsChanging(double value);
 
-  private:
-    Q_DECLARE_PRIVATE(QBirchSliderWidget);
-    Q_DISABLE_COPY(QBirchSliderWidget);
+  /// This signal is emitted whenever the number of decimals is changed.
+  /// \sa decimals, SynchronizeDecimals
+  void decimalsChanged(int decimals);
+
+protected Q_SLOTS:
+
+  virtual void startChanging();
+  virtual void stopChanging();
+  virtual void setSpinBoxValue(double sliderValue);
+  virtual void setSliderValue(double spinBoxValue);
+
+protected:
+  virtual bool eventFilter(QObject *obj, QEvent *event);
+
+protected:
+  QScopedPointer<QBirchSliderWidgetPrivate> d_ptr;
+
+private:
+  Q_DECLARE_PRIVATE(QBirchSliderWidget);
+  Q_DISABLE_COPY(QBirchSliderWidget);
+
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(QBirchSliderWidget::SynchronizeSiblings);
 
 #endif

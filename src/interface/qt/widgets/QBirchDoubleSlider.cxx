@@ -1,11 +1,5 @@
 /*=========================================================================
 
-  Program:   Birch
-  Module:    QBirchDoubleSlider.cxx
-  Language:  C++
-
-  Author: Dean Inglis <inglisd AT mcmaster DOT ca>
-
   Library:   CTK
 
   Copyright (c) Kitware Inc.
@@ -23,56 +17,65 @@
   limitations under the License.
 
 =========================================================================*/
-#include <QBirchDoubleSlider.h>
 
 // QT includes
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QHelpEvent>
+#include <QPointer>
 #include <QStyle>
 #include <QStyleOptionSlider>
 #include <QToolTip>
+
+// Birch includes
+#include "QBirchDoubleSlider.h"
 
 // STD includes
 #include <limits>
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-class QBirchSlider: public QSlider
+// birchSlider
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+class birchSlider: public QSlider
 {
-  public:
-    explicit QBirchSlider(QWidget* parent);
-    using QSlider::initStyleOption;
+public:
+  birchSlider(QWidget* parent);
+  using QSlider::initStyleOption;
 };
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-QBirchSlider::QBirchSlider(QWidget* parent): QSlider(parent)
+birchSlider::birchSlider(QWidget* parent): QSlider(parent)
 {
 }
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+// QBirchDoubleSliderPrivate
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 class QBirchDoubleSliderPrivate
 {
   Q_DECLARE_PUBLIC(QBirchDoubleSlider);
-  protected:
-    QBirchDoubleSlider* const q_ptr;
-  public:
-    explicit QBirchDoubleSliderPrivate(QBirchDoubleSlider& object);
-    int toInt(double value) const;
-    double fromInt(int value) const;
-    double safeFromInt(int value) const;
-    void init();
-    void updateOffset(double value);
+protected:
+  QBirchDoubleSlider* const q_ptr;
+public:
+  QBirchDoubleSliderPrivate(QBirchDoubleSlider& object);
+  int toInt(double value)const;
+  double fromInt(int value)const;
+  double safeFromInt(int value)const;
+  void init();
+  void updateOffset(double value);
 
-    QBirchSlider* Slider;
-    QString HandleToolTip;
-    double Minimum;
-    double Maximum;
-    bool SettingRange;
-    // we should have a Offset and SliderPositionOffset (and MinimumOffset?)
-    double Offset;
-    double SingleStep;
-    double PageStep;
-    double Value;
+  birchSlider*    Slider;
+  QString       HandleToolTip;
+  double      Minimum;
+  double      Maximum;
+  bool        SettingRange;
+  // we should have a Offset and SliderPositionOffset (and MinimumOffset?)
+  double      Offset;
+  double      SingleStep;
+  double      PageStep;
+  double      Value;
 };
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -93,11 +96,11 @@ QBirchDoubleSliderPrivate::QBirchDoubleSliderPrivate(QBirchDoubleSlider& object)
 void QBirchDoubleSliderPrivate::init()
 {
   Q_Q(QBirchDoubleSlider);
-  this->Slider = new QBirchSlider(q);
+  this->Slider = new birchSlider(q);
   this->Slider->installEventFilter(q);
   QHBoxLayout* l = new QHBoxLayout(q);
   l->addWidget(this->Slider);
-  l->setContentsMargins(0, 0, 0, 0);
+  l->setContentsMargins(0,0,0,0);
 
   this->Minimum = this->Slider->minimum();
   this->Maximum = this->Slider->maximum();
@@ -106,51 +109,50 @@ void QBirchDoubleSliderPrivate::init()
   this->PageStep = this->Slider->pageStep();
   this->Value = this->Slider->value();
 
-  q->connect(this->Slider, SIGNAL(valueChanged(int)),
-    q, SLOT(onValueChanged(int)));
-  q->connect(this->Slider, SIGNAL(sliderMoved(int)),
-    q, SLOT(onSliderMoved(int)));
-  q->connect(this->Slider, SIGNAL(sliderPressed()),
-    q, SIGNAL(sliderPressed()));
-  q->connect(this->Slider, SIGNAL(sliderReleased()),
-    q, SIGNAL(sliderReleased()));
-  q->connect(this->Slider, SIGNAL(rangeChanged(int, int)),
-             q, SLOT(onRangeChanged(int, int)));
+  q->connect(this->Slider, SIGNAL(valueChanged(int)), q, SLOT(onValueChanged(int)));
+  q->connect(this->Slider, SIGNAL(sliderMoved(int)), q, SLOT(onSliderMoved(int)));
+  q->connect(this->Slider, SIGNAL(sliderPressed()), q, SIGNAL(sliderPressed()));
+  q->connect(this->Slider, SIGNAL(sliderReleased()), q, SIGNAL(sliderReleased()));
+  q->connect(this->Slider, SIGNAL(rangeChanged(int,int)),
+             q, SLOT(onRangeChanged(int,int)));
 
   q->setSizePolicy(this->Slider->sizePolicy());
   q->setAttribute(Qt::WA_WState_OwnSizePolicy, false);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-int QBirchDoubleSliderPrivate::toInt(double doubleValue) const
+int QBirchDoubleSliderPrivate::toInt(double doubleValue)const
 {
   double tmp = doubleValue / this->SingleStep;
   static const double minInt = std::numeric_limits<int>::min();
   static const double maxInt = std::numeric_limits<int>::max();
 #ifndef QT_NO_DEBUG
-  if (tmp < minInt || tmp > maxInt)
+  static const double maxDouble = std::numeric_limits<double>::max();
+  if ( (tmp < minInt || tmp > maxInt) &&
+       // If the value is the min or max double, there is no need
+       // to warn. It is expected that the number is outside of bounds.
+       (doubleValue != -maxDouble && doubleValue != maxDouble) )
     {
     qWarning() << __FUNCTION__ << ": value " << doubleValue
-              << " for singleStep " << this->SingleStep
-              << " is out of integer bounds !";
+               << " for singleStep " << this->SingleStep
+               << " is out of integer bounds !";
     }
 #endif
   tmp = qBound(minInt, tmp, maxInt);
   int intValue = qRound(tmp);
-  // qDebug() << __FUNCTION__ << doubleValue << tmp << intValue;
+  //qDebug() << __FUNCTION__ << doubleValue << tmp << intValue;
   return intValue;
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSliderPrivate::fromInt(int intValue) const
+double QBirchDoubleSliderPrivate::fromInt(int intValue)const
 {
-  double doubleValue = this->SingleStep * (this->Offset + intValue);
-  // qDebug() << __FUNCTION__ << intValue << doubleValue;
+  double doubleValue = this->SingleStep * (this->Offset + intValue) ;
   return doubleValue;
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSliderPrivate::safeFromInt(int intValue) const
+double QBirchDoubleSliderPrivate::safeFromInt(int intValue)const
 {
   return qBound(this->Minimum, this->fromInt(intValue), this->Maximum);
 }
@@ -162,6 +164,9 @@ void QBirchDoubleSliderPrivate::updateOffset(double value)
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+// QBirchDoubleSlider
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 QBirchDoubleSlider::QBirchDoubleSlider(QWidget* _parent) : Superclass(_parent)
   , d_ptr(new QBirchDoubleSliderPrivate(*this))
 {
@@ -170,8 +175,7 @@ QBirchDoubleSlider::QBirchDoubleSlider(QWidget* _parent) : Superclass(_parent)
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-QBirchDoubleSlider::QBirchDoubleSlider(
-  Qt::Orientation _orientation, QWidget* _parent)
+QBirchDoubleSlider::QBirchDoubleSlider(Qt::Orientation _orientation, QWidget* _parent)
   : Superclass(_parent)
   , d_ptr(new QBirchDoubleSliderPrivate(*this))
 {
@@ -188,23 +192,30 @@ QBirchDoubleSlider::~QBirchDoubleSlider()
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchDoubleSlider::setMinimum(double min)
 {
-  Q_D(QBirchDoubleSlider);
-  this->setRange(min, qMax(min, d->Maximum));
+  this->setRange(min, qMax(min, this->maximum()));
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchDoubleSlider::setMaximum(double max)
 {
-  Q_D(QBirchDoubleSlider);
-  this->setRange(qMin(d->Minimum, max), max);
+  this->setRange(qMin(this->minimum(), max), max);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void QBirchDoubleSlider::setRange(double min, double max)
+void QBirchDoubleSlider::setRange(double newMin, double newMax)
 {
   Q_D(QBirchDoubleSlider);
-  d->Minimum = min;
-  d->Maximum = max;
+
+  if (newMin > newMax)
+    {
+    qSwap(newMin, newMax);
+    }
+
+  double oldMin = d->Minimum;
+  double oldMax = d->Maximum;
+
+  d->Minimum = newMin;
+  d->Maximum = newMax;
 
   if (d->Minimum >= d->Value)
     {
@@ -214,54 +225,67 @@ void QBirchDoubleSlider::setRange(double min, double max)
     {
     d->updateOffset(d->Maximum);
     }
+  bool wasSettingRange = d->SettingRange;
   d->SettingRange = true;
-  d->Slider->setRange(d->toInt(min), d->toInt(max));
-  d->SettingRange = false;
-  emit this->rangeChanged(d->Minimum, d->Maximum);
+  d->Slider->setRange(d->toInt(newMin), d->toInt(newMax));
+  d->SettingRange = wasSettingRange;
+  if (!wasSettingRange && (d->Minimum != oldMin || d->Maximum != oldMax))
+    {
+    emit this->rangeChanged(this->minimum(), this->maximum());
+    }
   /// In case QSlider::setRange(...) didn't notify the value
   /// has changed.
-  this->setValue(d->Value);
+  this->setValue(this->value());
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::minimum() const
+double QBirchDoubleSlider::minimum()const
 {
   Q_D(const QBirchDoubleSlider);
-  return d->Minimum;
+  double min = d->Minimum;
+  double max = d->Maximum;
+  return qMin(min, max);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::maximum() const
+double QBirchDoubleSlider::maximum()const
 {
   Q_D(const QBirchDoubleSlider);
-  return d->Maximum;
+  double min = d->Minimum;
+  double max = d->Maximum;
+  return qMax(min, max);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::sliderPosition() const
+double QBirchDoubleSlider::sliderPosition()const
 {
   Q_D(const QBirchDoubleSlider);
-  return d->safeFromInt(d->Slider->sliderPosition());
+  int intPosition = d->Slider->sliderPosition();
+  double position = d->safeFromInt(intPosition);
+  return position;
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void QBirchDoubleSlider::setSliderPosition(double newSliderPosition)
+void QBirchDoubleSlider::setSliderPosition(double newPosition)
 {
   Q_D(QBirchDoubleSlider);
-  d->Slider->setSliderPosition(d->toInt(newSliderPosition));
+  int newIntPosition = d->toInt(newPosition);
+  d->Slider->setSliderPosition(newIntPosition);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::value() const
+double QBirchDoubleSlider::value()const
 {
   Q_D(const QBirchDoubleSlider);
-  return d->Value;
+  double val = d->Value;
+  return val;
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchDoubleSlider::setValue(double newValue)
 {
   Q_D(QBirchDoubleSlider);
+
   newValue = qBound(d->Minimum, newValue, d->Maximum);
   d->updateOffset(newValue);
   int newIntValue = d->toInt(newValue);
@@ -279,22 +303,29 @@ void QBirchDoubleSlider::setValue(double newValue)
     // similar to the old value.
     if (qAbs(newValue - oldValue) > (d->SingleStep * 0.000000001))
       {
-      emit this->valueChanged(newValue);
+      emit this->valueChanged(this->value());
       }
     }
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::singleStep() const
+double QBirchDoubleSlider::singleStep()const
 {
   Q_D(const QBirchDoubleSlider);
-  return d->SingleStep;
+  double step = d->SingleStep;
+  return step;
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 void QBirchDoubleSlider::setSingleStep(double newStep)
 {
   Q_D(QBirchDoubleSlider);
+  if (!this->isValidStep(newStep))
+    {
+    qWarning() << "QBirchDoubleSlider::setSingleStep("<< newStep <<")"
+               << "is outside of valid bounds.";
+    return;
+    }
   d->SingleStep = newStep;
   d->updateOffset(d->Value);
   // update the new values of the QSlider
@@ -303,11 +334,26 @@ void QBirchDoubleSlider::setSingleStep(double newStep)
   d->Slider->setValue(d->toInt(d->Value));
   d->Slider->setPageStep(d->toInt(d->PageStep));
   d->Slider->blockSignals(oldBlockSignals);
-  Q_ASSERT(qFuzzyCompare(d->Value, d->safeFromInt(d->Slider->value())));
+  Q_ASSERT(qFuzzyCompare(d->Value,d->safeFromInt(d->Slider->value())));
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::pageStep() const
+bool QBirchDoubleSlider::isValidStep(double step)const
+{
+  Q_D(const QBirchDoubleSlider);
+  if (d->Minimum == d->Maximum)
+    {
+    return true;
+    }
+  const double minStep = qMax(d->Maximum / std::numeric_limits<double>::max(),
+                              std::numeric_limits<double>::epsilon());
+  const double maxStep = qMin(d->Maximum - d->Minimum,
+                              static_cast<double>(std::numeric_limits<int>::max()));
+  return step >= minStep && step <= maxStep;
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+double QBirchDoubleSlider::pageStep()const
 {
   Q_D(const QBirchDoubleSlider);
   return d->PageStep;
@@ -318,26 +364,43 @@ void QBirchDoubleSlider::setPageStep(double newStep)
 {
   Q_D(QBirchDoubleSlider);
   d->PageStep = newStep;
-  d->Slider->setPageStep(d->toInt(d->PageStep));
+  int intPageStep = d->toInt(d->PageStep);
+  d->Slider->setPageStep(intPageStep);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-double QBirchDoubleSlider::tickInterval() const
+double QBirchDoubleSlider::tickInterval()const
 {
   Q_D(const QBirchDoubleSlider);
   // No need to apply Offset
-  return d->SingleStep * d->Slider->tickInterval();
+  double interval = d->SingleStep * d->Slider->tickInterval();
+  return interval;
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void QBirchDoubleSlider::setTickInterval(double newTickInterval)
+void QBirchDoubleSlider::setTickInterval(double newInterval)
 {
   Q_D(QBirchDoubleSlider);
-  d->Slider->setTickInterval(d->toInt(newTickInterval));
+  int newIntInterval = d->toInt(newInterval);
+  d->Slider->setTickInterval(newIntInterval);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-bool QBirchDoubleSlider::hasTracking() const
+QSlider::TickPosition QBirchDoubleSlider::tickPosition()const
+{
+  Q_D(const QBirchDoubleSlider);
+  return d->Slider->tickPosition();
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchDoubleSlider::setTickPosition(QSlider::TickPosition newTickPosition)
+{
+  Q_D(QBirchDoubleSlider);
+  d->Slider->setTickPosition(newTickPosition);
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+bool QBirchDoubleSlider::hasTracking()const
 {
   Q_D(const QBirchDoubleSlider);
   return d->Slider->hasTracking();
@@ -351,14 +414,42 @@ void QBirchDoubleSlider::setTracking(bool enable)
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void QBirchDoubleSlider::triggerAction(QAbstractSlider::SliderAction action)
+bool QBirchDoubleSlider::invertedAppearance()const
+{
+  Q_D(const QBirchDoubleSlider);
+  return d->Slider->invertedAppearance();
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchDoubleSlider::setInvertedAppearance(bool invertedAppearance)
+{
+  Q_D(QBirchDoubleSlider);
+  d->Slider->setInvertedAppearance(invertedAppearance);
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+bool QBirchDoubleSlider::invertedControls()const
+{
+  Q_D(const QBirchDoubleSlider);
+  return d->Slider->invertedControls();
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchDoubleSlider::setInvertedControls(bool invertedControls)
+{
+  Q_D(QBirchDoubleSlider);
+  d->Slider->setInvertedControls(invertedControls);
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+void QBirchDoubleSlider::triggerAction( QAbstractSlider::SliderAction action)
 {
   Q_D(QBirchDoubleSlider);
   d->Slider->triggerAction(action);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-Qt::Orientation QBirchDoubleSlider::orientation() const
+Qt::Orientation QBirchDoubleSlider::orientation()const
 {
   Q_D(const QBirchDoubleSlider);
   return d->Slider->orientation();
@@ -384,7 +475,7 @@ void QBirchDoubleSlider::setOrientation(Qt::Orientation newOrientation)
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-QString QBirchDoubleSlider::handleToolTip() const
+QString QBirchDoubleSlider::handleToolTip()const
 {
   Q_D(const QBirchDoubleSlider);
   return d->HandleToolTip;
@@ -402,17 +493,12 @@ void QBirchDoubleSlider::onValueChanged(int newValue)
 {
   Q_D(QBirchDoubleSlider);
   double doubleNewValue = d->safeFromInt(newValue);
-/*
-  qDebug() << "onValueChanged: " << newValue << "->"<< d->fromInt(newValue+d->Offset)
-           << " old: " << d->Value << "->" << d->toInt(d->Value)
-           << "offset:" << d->Offset << doubleNewValue;
-*/
   if (d->Value == doubleNewValue)
     {
     return;
     }
   d->Value = doubleNewValue;
-  emit this->valueChanged(d->Value);
+  emit this->valueChanged(this->value());
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -423,13 +509,16 @@ void QBirchDoubleSlider::onSliderMoved(int newPosition)
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
-void QBirchDoubleSlider::onRangeChanged(int min, int max)
+void QBirchDoubleSlider::onRangeChanged(int newIntMin, int newIntMax)
 {
   Q_D(const QBirchDoubleSlider);
-  if (!d->SettingRange)
+  if (d->SettingRange)
     {
-    this->setRange(d->fromInt(min), d->fromInt(max));
+    return;
     }
+  double newMin = d->fromInt(newIntMin);
+  double newMax = d->fromInt(newIntMax);
+  this->setRange(newMin, newMax);
 }
 
 // -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
@@ -438,7 +527,7 @@ bool QBirchDoubleSlider::eventFilter(QObject* watched, QEvent* event)
   Q_D(QBirchDoubleSlider);
   if (watched == d->Slider)
     {
-    switch (event->type())
+    switch(event->type())
       {
       case QEvent::ToolTip:
         {
@@ -451,8 +540,7 @@ bool QBirchDoubleSlider::eventFilter(QObject* watched, QEvent* event)
         if (!d->HandleToolTip.isEmpty() &&
             hoveredControl == QStyle::SC_SliderHandle)
           {
-          QToolTip::showText(helpEvent->globalPos(),
-            d->HandleToolTip.arg(this->value()));
+          QToolTip::showText(helpEvent->globalPos(), d->HandleToolTip.arg(this->value()));
           event->accept();
           return true;
           }
@@ -462,4 +550,11 @@ bool QBirchDoubleSlider::eventFilter(QObject* watched, QEvent* event)
       }
     }
   return this->Superclass::eventFilter(watched, event);
+}
+
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+QSlider* QBirchDoubleSlider::slider()const
+{
+  Q_D(const QBirchDoubleSlider);
+  return d->Slider;
 }

@@ -25,10 +25,11 @@
 #include <QBirchFramePlayerWidget.h>
 #include <ui_QBirchFramePlayerWidget.h>
 
-// Birchr includes
+// Birch includes
 #include <Common.h>
 #include <vtkMedicalImageViewer.h>
 #include <QBirchSliceView.h>
+#include <QBirchDoubleSpinBox.h>
 
 // Qt includes
 #include <QIcon>

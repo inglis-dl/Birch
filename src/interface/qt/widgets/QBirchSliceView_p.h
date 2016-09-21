@@ -36,7 +36,7 @@ class QBirchSliceViewPrivate : public QBirchAbstractViewPrivate
   Q_DECLARE_PUBLIC(QBirchSliceView);
 
   public:
-    QBirchSliceViewPrivate(QBirchSliceView& object);
+    explicit QBirchSliceViewPrivate(QBirchSliceView& object);
 
     void setColorWindowLevel(const double& window, const double& level);
     void flipCameraVertical();

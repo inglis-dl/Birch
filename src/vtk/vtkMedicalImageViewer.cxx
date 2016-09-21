@@ -84,7 +84,7 @@ class vtkWindowLevelCallback : public vtkCommand
     }
 
     vtkWindowLevelCallback():Viewer(0) {}
-    ~vtkWindowLevelCallback(){ this->Viewer = 0; }
+    ~vtkWindowLevelCallback() { this->Viewer = 0; }
     vtkMedicalImageViewer* Viewer;
 };
 
@@ -107,7 +107,7 @@ class vtkCursorWidgetToAnnotationCallback : public vtkCommand
     }
 
     vtkCursorWidgetToAnnotationCallback():Viewer(0) {}
-    ~vtkCursorWidgetToAnnotationCallback(){ this->Viewer = 0; }
+    ~vtkCursorWidgetToAnnotationCallback() { this->Viewer = 0; }
     vtkMedicalImageViewer* Viewer;
 };
 
@@ -126,7 +126,7 @@ class vtkAnimationCueCallback : public vtkCommand
     }
 
     vtkAnimationCueCallback():Viewer(0), Player(0) {}
-    ~vtkAnimationCueCallback(){ this->Viewer = 0; this->Player = 0; }
+    ~vtkAnimationCueCallback() { this->Viewer = 0; this->Player = 0; }
     vtkMedicalImageViewer* Viewer;
     vtkFrameAnimationPlayer* Player;
 };
@@ -171,8 +171,8 @@ class vtkOrientationCharCallback : public vtkCommand {
       }
     }
 
-    vtkOrientationCharCallback():Viewer(0){}
-    ~vtkOrientationCharCallback(){ this->Viewer = 0; }
+    vtkOrientationCharCallback():Viewer(0) {}
+    ~vtkOrientationCharCallback() { this->Viewer = 0; }
     vtkMedicalImageViewer *Viewer;
 };
 

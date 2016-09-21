@@ -44,32 +44,32 @@
 
 #include <vtkOutputWindow.h>
 
-//! Route VTK warning, error, and debug text to Qt.
-/*!
+// ! Route VTK warning, error, and debug text to Qt.
+/*
  *  The purpose of this class is to cause VTK's debug, error, and warning
  *  macro output to be routed to the Qt message handler.
  */
 class QBirchVTKOutputWindow : public vtkOutputWindow
 {
-public:
-  vtkTypeMacro(QBirchVTKOutputWindow, vtkOutputWindow);
-  static QBirchVTKOutputWindow* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
-  virtual void DisplayText(const char*);
-  virtual void DisplayErrorText(const char*);
-  virtual void DisplayWarningText(const char*);
-  virtual void DisplayGenericWarningText(const char*);
-  virtual void DisplayDebugText(const char*);
-  static void Install();
+  public:
+    vtkTypeMacro(QBirchVTKOutputWindow, vtkOutputWindow);
+    static QBirchVTKOutputWindow* New();
+    virtual void PrintSelf(ostream& os, vtkIndent indent);
+    virtual void DisplayText(const char*);
+    virtual void DisplayErrorText(const char*);
+    virtual void DisplayWarningText(const char*);
+    virtual void DisplayGenericWarningText(const char*);
+    virtual void DisplayDebugText(const char*);
+    static void Install();
 
-protected:
-  QBirchVTKOutputWindow();
-  virtual ~QBirchVTKOutputWindow();
-  void Initialize();
+  protected:
+    QBirchVTKOutputWindow();
+    virtual ~QBirchVTKOutputWindow();
+    void Initialize();
 
-private:
-  QBirchVTKOutputWindow(const QBirchVTKOutputWindow&);  // Not implemented.
-  void operator=(const QBirchVTKOutputWindow&);  // Not implemented.
+  private:
+    QBirchVTKOutputWindow(const QBirchVTKOutputWindow&);  // Not implemented.
+    void operator=(const QBirchVTKOutputWindow&);  // Not implemented.
 };
 
 #endif

@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 
-//-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
+// -+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-+#+-
 bool QBirchApplication::notify(QObject* pObject, QEvent* pEvent)
 {
   try
