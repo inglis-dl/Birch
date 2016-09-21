@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>184</width>
-    <height>32</height>
+    <width>183</width>
+    <height>27</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,7 +31,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QDoubleSpinBox" name="SpinBox"/>
+    <widget class="QBirchDoubleSpinBox" name="SpinBox"/>
    </item>
   </layout>
  </widget>
@@ -40,6 +40,11 @@
    <class>QBirchDoubleSlider</class>
    <extends>QWidget</extends>
    <header>QBirchDoubleSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QBirchDoubleSpinBox</class>
+   <extends>QWidget</extends>
+   <header>QBirchDoubleSpinBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

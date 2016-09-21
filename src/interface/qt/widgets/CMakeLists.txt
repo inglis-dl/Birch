@@ -4,6 +4,7 @@ SET( BirchQtWidgetsLib_SRC
   QBirchAbstractView.cxx
   QBirchDicomTagWidget.cxx
   QBirchDoubleSlider.cxx
+  QBirchDoubleSpinBox.cxx
   QBirchFramePlayerWidget.cxx
   QBirchImageControl.cxx
   QBirchImageWidget.cxx
@@ -28,6 +29,8 @@ SET( BirchQtWidgets_MocHeaders
   QBirchAbstractView_p.h
   QBirchDicomTagWidget.h
   QBirchDoubleSlider.h
+  QBirchDoubleSpinBox.h
+  QBirchDoubleSpinBox_p.h
   QBirchFramePlayerWidget.h
   QBirchImageControl.h
   QBirchImageWidget.h
