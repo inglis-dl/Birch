@@ -312,7 +312,6 @@ protected:
   /// Reimplemented to support shortcuts on the double spinbox.
   virtual bool eventFilter(QObject *obj, QEvent *event);
 
-  friend class ctkCoordinatesWidgetPrivate;
 private:
   Q_DECLARE_PRIVATE(QBirchDoubleSpinBox);
   Q_DISABLE_COPY(QBirchDoubleSpinBox);
