@@ -13,8 +13,6 @@
 // Qt includes
 #include <QApplication>
 
-class Ui_QBirchApplication;
-
 class QBirchApplication : public QApplication
 {
   public:
