@@ -1161,60 +1161,70 @@ void QBirchSliceView::writeSlice(const QString& fileName)
   {
     vtkNew<vtkImageDataWriter> writer;
     writer->SetFileName(fileName.toStdString().c_str());
-    vtkNew<vtkImageClip> clip;
-
-    int extent[6];
-    int u, v, w = d->orientation;
-    switch (w)
+    if(3 == d->dimensionality)
     {
-      case 0: u = 1; v = 2; break;
-      case 1: u = 0; v = 2; break;
-      case 2: u = 0; v = 1; break;
+      vtkNew<vtkImageClip> clip;
+
+      int extent[6];
+      int u, v, w = d->orientation;
+      switch (w)
+      {
+        case 0: u = 1; v = 2; break;
+        case 1: u = 0; v = 2; break;
+        case 2: u = 0; v = 1; break;
+      }
+      int* w_ext = input->GetExtent();
+      extent[2*u] = w_ext[2*u];
+      extent[2*u+1] = w_ext[2*u+1];
+      extent[2*v] = w_ext[2*v];
+      extent[2*v+1] = w_ext[2*v+1];
+      extent[2*w] = d->slice;
+      extent[2*w+1] = d->slice;
+
+      clip->SetOutputWholeExtent(extent);
+      clip->ClipDataOn();
+      clip->SetInputData(input);
+      clip->Update();
+
+      int ec[6];
+      clip->GetOutput()->GetExtent(ec);
+
+      int et[] = {0, 0, 0};  // extent translation
+      int op[] = {0, 1, 2};  // output axes permutation
+
+      // translate to an x-y plane:
+      // 1) change extents via vtkImageChangeInformation
+      // 2) permute the axes
+      switch (w)
+      {
+        case 0: et[0] = -ec[0];
+                op[0] = 2; op[1] = 0; op[2] = 1;
+                break;  // YZ
+        case 1: et[1] = -ec[2];
+                op[0] = 0; op[1] = 2; op[2] = 1;
+                break;  // XZ
+        case 2: et[2] = -ec[4];
+                break;  // XY
+      }
+
+      vtkNew<vtkImageChangeInformation> change;
+      change->SetExtentTranslation(et);
+      change->SetInputConnection(clip->GetOutputPort());
+      change->Update();
+
+      vtkNew<vtkImagePermute> permute;
+      permute->SetFilteredAxes(op);
+      permute->SetInputConnection(change->GetOutputPort());
+      permute->Update();
+
+      writer->SetInputData(permute->GetOutput());
+      writer->Write();
     }
-    int* w_ext = input->GetExtent();
-    extent[2*u] = w_ext[2*u];
-    extent[2*u+1] = w_ext[2*u+1];
-    extent[2*v] = w_ext[2*v];
-    extent[2*v+1] = w_ext[2*v+1];
-    extent[2*w] = d->slice;
-    extent[2*w+1] = d->slice;
-
-    clip->SetOutputWholeExtent(extent);
-    clip->ClipDataOn();
-    clip->SetInputData(input);
-    clip->Update();
-
-    int ec[6];
-    clip->GetOutput()->GetExtent(ec);
-
-    int et[] = {0, 0, 0};  // extent translation
-    int op[] = {0, 1, 2};  // output axes permutation
-
-    // translate to an x-y plane:
-    // 1) change extents via vtkImageChangeInformation
-    // 2) permute the axes
-    switch (w)
+    else
     {
-      case 0: et[0] = -ec[0];
-              op[0] = 2; op[1] = 0; op[2] = 1;
-              break;  // YZ
-      case 1: et[1] = -ec[2];
-              op[0] = 0; op[1] = 2; op[2] = 1;
-              break;  // XZ
-      case 2: et[2] = -ec[4];
-              break;  // XY
+      writer->SetInputData(input);
+      writer->Write();
     }
-
-    vtkNew<vtkImageChangeInformation> change;
-    change->SetExtentTranslation(et);
-    change->SetInputConnection(clip->GetOutputPort());
-
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(op);
-    permute->SetInputConnection(change->GetOutputPort());
-
-    writer->SetInputData(permute->GetOutput());
-    writer->Write();
   }
 }
 
