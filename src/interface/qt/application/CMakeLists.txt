@@ -35,14 +35,30 @@ ADD_EXECUTABLE( birch
   ${BirchApp_MOC}
 )
 
-TARGET_LINK_LIBRARIES( birch
-  ${BIRCH_LIBRARIES}
-  ${QT_LIBRARIES}
+SET(BIRCH_APP_VTK_LIBS
   vtkGUISupportQt
   vtkChartsCore
   vtkImagingStatistics
   vtkRenderingContextOpenGL
   vtkViewsContext2D
+)
+IF(${VTK_MAJOR_VERSION} GREATER 6)
+  SET(BIRCH_APP_VTK_LIBS
+    vtkGUISupportQt
+    vtkChartsCore
+    vtkImagingStatistics
+    vtkRenderingContextOpenGL2
+    vtkRenderingGL2PSOpenGL2
+    vtkInteractionStyle
+    vtkRenderingFreeType
+    vtkViewsContext2D
+  )
+ENDIF()
+
+TARGET_LINK_LIBRARIES( birch
+  ${BIRCH_LIBRARIES}
+  ${QT_LIBRARIES}
+  ${BIRCH_APP_VTK_LIBS}
 )
 
 INSTALL( TARGETS birch RUNTIME DESTINATION bin )

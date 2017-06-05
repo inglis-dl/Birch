@@ -35,6 +35,14 @@ SET(VTK_LIBS
   vtkRenderingImage
   vtkRenderingVolumeOpenGL
 )
+IF(${VTK_MAJOR_VERSION} GREATER 6)
+  SET(VTK_LIBS
+    vtkImagingMath
+    vtkIOMINC
+    vtkIOXML
+    vtkRenderingImage
+  )
+ENDIF()
 
 TARGET_LINK_LIBRARIES( BirchVTK
   ${VTK_LIBS}
